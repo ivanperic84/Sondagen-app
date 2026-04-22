@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sondagen Weinfelden–Sulgen</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="manifest" href="data:application/json,%7B%22name%22%3A%22Sondagen%22%2C%22display%22%3A%22standalone%22%2C%22start_url%22%3A%22.%22%7D">
+<meta name="theme-color" content="#1a3a5c">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -50,7 +52,7 @@
   .pb-amber { background: #d97706; transition: width 0.4s; }
 
   /* Overview */
-  .overview { padding: 16px 20px; }
+  .overview { padding: 16px 20px; overflow-x: hidden; }
   .overview-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
   .overview-header h2 { font-size: 15px; color: #1a3a5c; }
   .filters { display: flex; gap: 6px; }
@@ -89,8 +91,8 @@
     width: 310px; min-width: 310px; background: white;
     overflow-y: auto; border-right: 1px solid #e0e4ea; display: flex; flex-direction: column;
   }
-  .detail-main { flex: 1; display: flex; flex-direction: column; position: relative; }
-  .map-container { flex: 1; position: relative; }
+  .detail-main { flex: 1; display: flex; flex-direction: column; position: relative; overflow: hidden; }
+  .map-container { flex: 1; position: relative; height: 100%; }
   #map { width: 100%; height: 100%; }
   .sketch-canvas { position: absolute; top: 0; left: 0; pointer-events: none; z-index: 500; }
   .sketch-canvas.draw-mode { pointer-events: all; cursor: crosshair; }
@@ -201,12 +203,28 @@
   }
   .save-comment-btn:hover { background: #1e4976; }
 
-  /* Toolbar */
+  /* Toolbar — schwebend über der Karte */
   .sketch-toolbar {
-    padding: 7px 10px; background: white; border-top: 1px solid #e0e4ea;
-    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    position: absolute;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 600;
+    padding: 6px 10px;
+    background: rgba(255,255,255,0.96);
+    border-radius: 14px;
+    border: 1px solid #e0e4ea;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+    display: flex; align-items: center; gap: 8px;
+    overflow-x: auto; overflow-y: visible;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    touch-action: pan-x;
+    max-width: calc(100% - 20px);
   }
-  .tool-group { display: flex; gap: 4px; align-items: center; }
+  .sketch-toolbar::-webkit-scrollbar { display: none; }
+  .tool-group { display: flex; gap: 4px; align-items: center; flex-shrink: 0; }
   .tool-btn {
     padding: 5px 9px; border-radius: 6px; border: 1px solid #d1d5db;
     background: white; cursor: pointer; font-size: 12px; font-weight: 600;
@@ -239,6 +257,11 @@
   .swisslink { font-size: 11px; color: #3b82f6; text-decoration: none; display: inline-block; margin-top: 3px; }
   .swisslink:hover { text-decoration: underline; }
   .leaflet-control-attribution { font-size: 9px !important; }
+
+
+  /* Marker entsperrt */
+  .marker-unlocked div { border-color: #f59e0b !important; animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
 
   /* GPS accuracy circle */
   .gps-dot {
@@ -328,11 +351,19 @@
   .color-dot.selected { border-color: #1a1a2e; }
 
   /* Toolbar-Buttons (Ansicht + Export) — gemeinsame Basis */
-  .view-bar { display: flex; align-items: center; gap: 8px; }
+  .view-bar {
+    display: flex; align-items: center; gap: 6px;
+    overflow-x: auto; overflow-y: visible;
+    flex-wrap: nowrap; -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; padding-bottom: 2px;
+    touch-action: pan-x;
+  }
+  .view-bar::-webkit-scrollbar { display: none; }
   .view-btn, .export-btn {
-    padding: 6px 13px; border-radius: 7px; border: 1px solid #d1d5db;
+    padding: 6px 10px; border-radius: 7px; border: 1px solid #d1d5db;
     background: white; cursor: pointer; font-size: 12px; font-weight: 600; color: #4b5563;
     transition: all 0.15s; box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    white-space: nowrap; flex-shrink: 0;
   }
   .view-btn:hover, .export-btn:hover { background: #f1f5f9; border-color: #94a3b8; color: #1e293b; }
   .view-btn.active, .export-btn.btn-primary {
@@ -361,6 +392,63 @@
   .list-zugang { max-width: 260px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #4b5563; }
   .list-icons { display: flex; gap: 4px; }
 
+
+  /* Search bar */
+  .search-bar-wrap { padding: 8px 20px 0; }
+  .search-input {
+    width: 100%; padding: 8px 14px 8px 36px; border: 1px solid #e5e7eb;
+    border-radius: 20px; font-size: 13px; font-family: inherit; outline: none;
+    background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E") no-repeat 12px center;
+    transition: border-color 0.15s;
+  }
+  .search-input:focus { border-color: #3b82f6; }
+
+  /* Quick status */
+  .quick-status-bar { display: flex; gap: 4px; margin-top: 8px; }
+  .qs-btn {
+    flex: 1; padding: 4px 2px; font-size: 10px; font-weight: 700;
+    border-radius: 5px; border: 1px solid transparent; cursor: pointer; text-align: center;
+    transition: all 0.15s;
+  }
+  .qs-btn.qs-geplant      { background:#f3f4f6; color:#6b7280; border-color:#d1d5db; opacity:0.45; }
+  .qs-btn.qs-abklaerung   { background:#fef3c7; color:#92400e; border-color:#fcd34d; opacity:0.45; }
+  .qs-btn.qs-abgeschlossen{ background:#d1fae5; color:#065f46; border-color:#6ee7b7; opacity:0.45; }
+  .qs-btn.qs-active { box-shadow: 0 0 0 2px #1a3a5c; opacity:1 !important; }
+
+  /* Distance badge */
+  .dist-badge {
+    font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px;
+    background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;
+  }
+
+  /* Photo section */
+  .photo-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .photo-thumb {
+    width: 72px; height: 72px; object-fit: cover; border-radius: 6px;
+    border: 1px solid #e5e7eb; cursor: pointer;
+  }
+  .photo-add-btn {
+    width: 72px; height: 72px; border: 2px dashed #d1d5db; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; color: #9ca3af; cursor: pointer; background: #f9fafb;
+    transition: all 0.15s; flex-shrink: 0;
+  }
+  .photo-add-btn:hover { border-color: #3b82f6; color: #3b82f6; background: #eff6ff; }
+
+  /* Changelog */
+  .changelog-entry { font-size: 11px; color: #6b7280; padding: 4px 0; border-bottom: 1px solid #f3f4f6; line-height: 1.5; }
+  .changelog-entry:last-child { border-bottom: none; }
+  .changelog-entry strong { color: #374151; }
+
+  /* Photo lightbox */
+  #photo-lightbox {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+    z-index: 9999; align-items: center; justify-content: center; flex-direction: column; gap: 12px;
+  }
+  #photo-lightbox.open { display: flex; }
+  #photo-lightbox img { max-width: 95vw; max-height: 80vh; border-radius: 8px; }
+  #photo-lightbox-del { background: #ef4444; color: white; border: none; padding: 8px 18px; border-radius: 7px; font-size: 13px; font-weight: 600; cursor: pointer; }
+
   @media (max-width: 700px) {
     .detail-layout { flex-direction: column; }
     .detail-sidebar { width: 100%; min-width: 0; height: 45vh; border-right: none; border-bottom: 1px solid #e0e4ea; }
@@ -372,7 +460,11 @@
 
 <div class="header">
   <div>
-    <div class="header-title">Rammsondagen Weinfelden–Sulgen</div>
+    <div class="header-title" style="display:flex;align-items:center;gap:8px;">
+      <span id="app-title-text" onclick="startEditTitle()" title="Titel bearbeiten" style="cursor:pointer;">Rammsondagen Weinfelden–Sulgen</span>
+      <input id="app-title-input" type="text" style="display:none;font-size:17px;font-weight:600;color:white;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.4);border-radius:6px;padding:2px 8px;outline:none;width:260px;" onblur="saveTitle()" onkeydown="if(event.key==='Enter')saveTitle();if(event.key==='Escape')cancelEditTitle();">
+      <span onclick="startEditTitle()" title="Titel bearbeiten" style="font-size:13px;opacity:0.6;cursor:pointer;">✎</span>
+    </div>
     <div class="header-sub">31 Standorte · RS &amp; RKS · Programm T1–T12</div>
   </div>
   <button class="back-btn" id="back-btn" onclick="showOverview()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><polyline points="15 18 9 12 15 6"/></svg> Übersicht</button>
@@ -403,17 +495,22 @@
       </div>
     </div>
   </div>
+  <!-- Search bar -->
+  <div class="search-bar-wrap">
+    <input class="search-input" id="search-input" type="search" placeholder="Standort suchen (Name, KM, Mast)…" oninput="onSearchInput(this.value)">
+  </div>
   <div class="overview">
-    <div class="overview-header">
-      <h2>Standorte</h2>
-      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-        <div class="filters">
-          <button class="filter-btn active" onclick="setFilter('alle',this)">Alle</button>
-          <button class="filter-btn" onclick="setFilter('geplant',this)">Geplant</button>
-          <button class="filter-btn" onclick="setFilter('abklaerung',this)">In Abklärung</button>
-          <button class="filter-btn" onclick="setFilter('abgeschlossen',this)">Abgeschlossen</button>
-        </div>
-        <div class="view-bar">
+    <div class="overview-header" style="flex-direction:column;align-items:stretch;gap:8px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <h2>Standorte</h2>
+      </div>
+      <div class="filters" style="display:flex;overflow-x:auto;flex-wrap:nowrap;gap:6px;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px;">
+        <button class="filter-btn active" onclick="setFilter('alle',this)" style="flex-shrink:0;">Alle</button>
+        <button class="filter-btn" onclick="setFilter('geplant',this)" style="flex-shrink:0;">Geplant</button>
+        <button class="filter-btn" onclick="setFilter('abklaerung',this)" style="flex-shrink:0;">In Abklärung</button>
+        <button class="filter-btn" onclick="setFilter('abgeschlossen',this)" style="flex-shrink:0;">Abgeschlossen</button>
+      </div>
+      <div class="view-bar">
           <button class="view-btn active" id="vbtn-karten" onclick="setOverviewView('karten')">⊞ Kacheln</button>
           <button class="view-btn" id="vbtn-liste" onclick="setOverviewView('liste')">≡ Liste</button>
           <button class="view-btn" id="vbtn-karte" onclick="setOverviewView('karte')">🗺 Karte</button>
@@ -426,11 +523,13 @@
               <button onclick="exportOneNote();closeExportMenu()" style="width:100%;padding:9px 14px;border:none;background:none;cursor:pointer;font-size:12px;font-weight:600;color:#374151;text-align:left;display:flex;align-items:center;gap:8px;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='none'">📓 OneNote (.html)</button>
             </div>
           </div>
+          <button class="export-btn" onclick="openExportModal()" title="Daten sichern">💾 Daten sichern</button>
+          <button class="export-btn" onclick="document.getElementById('import-daten-file').click()" title="Gesicherte Daten laden">📂 Daten laden</button>
+          <input type="file" id="import-daten-file" accept=".json" style="display:none" onchange="importAppDaten(this)">
           <button class="export-btn" onclick="document.getElementById('import-file').click()">⬆ Import</button>
           <input type="file" id="import-file" accept=".xlsx,.xls" style="display:none" onchange="importExcel(this)">
           <button class="export-btn" onclick="openTermineModal()">📅 Termine</button>
           <button class="export-btn btn-primary" onclick="openModal()">+ Neu</button>
-        </div>
       </div>
     </div>
     <!-- Tag filter + Sort row -->
@@ -491,11 +590,15 @@
 
   <!-- Overview map -->
   <div id="overview-map-wrap">
+    <div style="display:flex;align-items:center;gap:8px;padding:0 0 8px 0;">
+      <button class="export-btn" id="btn-overview-gps" onclick="toggleOverviewGPS()" style="opacity:0.45;">📍 GPS</button>
+      <button class="export-btn" id="btn-overview-gps-zoom" onclick="zoomToOverviewGPS()" style="display:none;">⊕ Standort</button>
+    </div>
     <div id="overview-map"></div>
   </div>
 
   <div style="text-align:right; padding:10px 24px 14px; font-size:11px; color:#c0c4cc; user-select:none;">
-    © 2026 Gentiana Leci
+    © 2026 Gentiana Leci &nbsp;·&nbsp; <span style="font-size:10px;opacity:0.7;">v1.8</span>
   </div>
 </div>
 
@@ -569,7 +672,42 @@
       <!-- Sondierungen -->
       <div class="sidebar-section">
         <h3>Rammsondierungen</h3>
+        <!-- RS/RKS Aktiv-Schalter -->
+        <div style="display:flex;gap:8px;margin-bottom:8px;">
+          <label style="flex:1;display:flex;align-items:center;justify-content:space-between;padding:6px 10px;border-radius:7px;border:2px solid #bfdbfe;background:#eff6ff;cursor:pointer;" id="rs-toggle-wrap">
+            <span style="font-size:12px;font-weight:700;color:#1d4ed8;">RS</span>
+            <label style="position:relative;display:inline-block;width:36px;height:20px;">
+              <input type="checkbox" id="rs-aktiv-cb" checked onchange="setTypAktiv('rs',this.checked)" style="opacity:0;width:0;height:0;">
+              <span id="rs-aktiv-slider" style="position:absolute;cursor:pointer;inset:0;background:#3b82f6;border-radius:20px;transition:0.2s;">
+                <span style="position:absolute;content:'';height:14px;width:14px;left:3px;bottom:3px;background:white;border-radius:50%;transition:0.2s;transform:translateX(16px);display:block;" id="rs-slider-knob"></span>
+              </span>
+            </label>
+          </label>
+          <label style="flex:1;display:flex;align-items:center;justify-content:space-between;padding:6px 10px;border-radius:7px;border:2px solid #fce7f3;background:#fdf2f8;cursor:pointer;" id="rks-toggle-wrap">
+            <span style="font-size:12px;font-weight:700;color:#9d174d;">RKS</span>
+            <label style="position:relative;display:inline-block;width:36px;height:20px;">
+              <input type="checkbox" id="rks-aktiv-cb" checked onchange="setTypAktiv('rks',this.checked)" style="opacity:0;width:0;height:0;">
+              <span id="rks-aktiv-slider" style="position:absolute;cursor:pointer;inset:0;background:#ec4899;border-radius:20px;transition:0.2s;">
+                <span style="position:absolute;content:'';height:14px;width:14px;left:3px;bottom:3px;background:white;border-radius:50%;transition:0.2s;transform:translateX(16px);display:block;" id="rks-slider-knob"></span>
+              </span>
+            </label>
+          </label>
+        </div>
         <table class="pair-table" id="pair-table"></table>
+      </div>
+
+      <!-- Fotos -->
+      <div class="sidebar-section">
+        <h3 style="display:flex;align-items:center;justify-content:space-between;">
+          Fotos
+          <label style="cursor:pointer;font-size:11px;color:#3b82f6;font-weight:600;text-transform:none;letter-spacing:0;">
+            + Foto hinzufügen
+            <input type="file" accept="image/*" capture="environment" id="foto-input" style="display:none" onchange="addFoto(this)">
+          </label>
+        </h3>
+        <div class="photo-grid" id="photo-grid">
+          <div class="photo-grid-inner" id="photo-grid-inner"></div>
+        </div>
       </div>
 
       <!-- Felddaten -->
@@ -726,6 +864,20 @@
 
         <button class="sicher-save-btn" onclick="saveSicherheit()">Sicherheit speichern</button>
       </div>
+
+      <!-- Änderungsprotokoll -->
+      <div class="sidebar-section">
+        <h3 style="display:flex;align-items:center;justify-content:space-between;">
+          Änderungsprotokoll
+          <button onclick="clearChangelog()" style="font-size:10px;font-weight:600;color:#ef4444;background:none;border:1px solid #fca5a5;border-radius:5px;padding:2px 8px;cursor:pointer;text-transform:none;letter-spacing:0;">🗑 Löschen</button>
+        </h3>
+        <div id="changelog-list" style="max-height:150px;overflow-y:auto;"></div>
+      </div>
+
+      <!-- PDF Bericht -->
+      <div class="sidebar-section">
+        <button onclick="exportPdfBericht()" style="width:100%;padding:10px;background:#1a3a5c;color:white;border:none;border-radius:7px;cursor:pointer;font-size:13px;font-weight:700;">📄 PDF-Bericht erstellen</button>
+      </div>
     </div>
 
     <!-- Map -->
@@ -745,48 +897,66 @@
         </div>
       </div>
 
-      <!-- Toolbar -->
+      <!-- Toolbar — dynamisch -->
       <div class="sketch-toolbar">
+        <!-- Immer sichtbar: Modus-Buttons -->
         <div class="tool-group">
-          <button class="tool-btn active-gps" id="btn-gps" onclick="toggleGPS()">📍 GPS</button>
-          <button class="tool-btn" id="btn-gps-zoom" onclick="zoomToGPS()" title="Zu meinem Standort zoomen" style="display:none;">⊕ Standort</button>
+          <button class="tool-btn active" id="btn-mode-pan" onclick="setMode('pan')">🗺 Karte</button>
+          <button class="tool-btn" id="btn-mode-draw" onclick="setMode('draw')">✏️ Zeichnen</button>
+          <button class="tool-btn" id="btn-mode-measure" onclick="setMode('measure')">📏 Messen</button>
         </div>
-        <div class="toolbar-sep"></div>
-        <div class="tool-group">
-          <span class="tool-label">Modus:</span>
-          <button class="tool-btn active" id="btn-mode-pan" onclick="setDrawMode(false)">🗺 Karte</button>
-          <button class="tool-btn" id="btn-mode-draw" onclick="setDrawMode(true)">✏️ Zeichnen</button>
-        </div>
-        <div class="tool-group" id="draw-tools" style="opacity:0.4;">
-          <span class="tool-label">Werkzeug:</span>
+
+        <!-- Zeichnen-Unterfunktionen -->
+        <div class="tool-group toolbar-draw-tools" id="draw-tools" style="display:none;">
+          <div class="toolbar-sep"></div>
           <button class="tool-btn active" id="btn-pen" onclick="setTool('pen')">Stift</button>
           <button class="tool-btn" id="btn-eraser" onclick="setTool('eraser')">Radierer</button>
         </div>
-        <div class="tool-group" id="color-tools" style="opacity:0.4;">
+        <div class="tool-group toolbar-draw-tools" id="color-tools" style="display:none;">
+          <div class="toolbar-sep"></div>
           <div class="color-swatch active" style="background:#e53e3e;" onclick="setColor('#e53e3e',this)"></div>
           <div class="color-swatch" style="background:#2b6cb0;" onclick="setColor('#2b6cb0',this)"></div>
           <div class="color-swatch" style="background:#276749;" onclick="setColor('#276749',this)"></div>
           <div class="color-swatch" style="background:#d69e2e;" onclick="setColor('#d69e2e',this)"></div>
           <div class="color-swatch" style="background:#1a1a2e;" onclick="setColor('#1a1a2e',this)"></div>
         </div>
-        <div class="tool-group">
-          <span class="tool-label">Grösse:</span>
-          <input type="range" id="brush-size" min="1" max="20" value="3" oninput="brushSize=+this.value">
+        <div class="tool-group toolbar-draw-tools" id="size-tools" style="display:none;">
+          <div class="toolbar-sep"></div>
+          <button class="tool-btn active" id="size-btn-1" onclick="setBrushSize(1,3)"  title="Stärke 1" style="padding:4px 8px;display:flex;align-items:center;justify-content:center;"><span style="display:inline-block;width:14px;height:2px;background:currentColor;border-radius:2px;"></span></button>
+          <button class="tool-btn"        id="size-btn-2" onclick="setBrushSize(2,6)"  title="Stärke 2" style="padding:4px 8px;display:flex;align-items:center;justify-content:center;"><span style="display:inline-block;width:14px;height:4px;background:currentColor;border-radius:2px;"></span></button>
+          <button class="tool-btn"        id="size-btn-3" onclick="setBrushSize(3,10)" title="Stärke 3" style="padding:4px 8px;display:flex;align-items:center;justify-content:center;"><span style="display:inline-block;width:14px;height:7px;background:currentColor;border-radius:2px;"></span></button>
+          <button class="tool-btn"        id="size-btn-4" onclick="setBrushSize(4,18)" title="Stärke 4" style="padding:4px 8px;display:flex;align-items:center;justify-content:center;"><span style="display:inline-block;width:14px;height:11px;background:currentColor;border-radius:2px;"></span></button>
         </div>
+        <div class="tool-group toolbar-draw-tools" style="display:none;" id="draw-del-tools">
+          <div class="toolbar-sep"></div>
+          <button class="tool-btn danger" onclick="clearSketch()" title="Skizze löschen">🗑</button>
+        </div>
+
+        <!-- Karte-Unterfunktionen -->
+        <div class="tool-group toolbar-pan-tools" id="pan-tools" style="display:none;">
+          <div class="toolbar-sep"></div>
+          <span class="tool-label">Transparenz:</span>
+          <button class="tool-btn" id="op-btn-1" onclick="setMapOpacity(25,1)"  style="font-size:10px;padding:4px 7px;">25%</button>
+          <button class="tool-btn" id="op-btn-2" onclick="setMapOpacity(50,2)"  style="font-size:10px;padding:4px 7px;">50%</button>
+          <button class="tool-btn" id="op-btn-3" onclick="setMapOpacity(75,3)"  style="font-size:10px;padding:4px 7px;">75%</button>
+          <button class="tool-btn active" id="op-btn-4" onclick="setMapOpacity(100,4)" style="font-size:10px;padding:4px 7px;">100%</button>
+        </div>
+
+        <!-- Messen-Unterfunktionen -->
+        <div class="tool-group toolbar-measure-tools" id="measure-tools" style="display:none;">
+          <div class="toolbar-sep"></div>
+          <span class="tool-label">Typ:</span>
+          <button class="tool-btn active" id="btn-measure-dist" onclick="setMeasureType('dist')" style="font-size:11px;padding:4px 9px;">📏 Distanz</button>
+          <button class="tool-btn" id="btn-measure-area" onclick="setMeasureType('area')" style="font-size:11px;padding:4px 9px;">⬡ Fläche</button>
+          <div class="toolbar-sep"></div>
+          <button class="tool-btn danger" onclick="resetMeasure()" title="Messung zurücksetzen" style="font-size:11px;padding:4px 9px;">🗑</button>
+        </div>
+
+        <!-- GPS — immer hinten -->
         <div class="toolbar-sep"></div>
         <div class="tool-group">
-          <span class="tool-label">Karte:</span>
-          <input type="range" id="map-opacity" min="0" max="100" value="100" oninput="setMapOpacity(this.value)" style="width:70px;">
-          <span id="map-opacity-label" style="font-size:11px;color:#6b7280;min-width:30px;">100%</span>
-        </div>
-        <div class="toolbar-sep"></div>
-        <div class="tool-group">
-          <button class="tool-btn danger" onclick="clearSketch()">🗑</button>
-          <button class="tool-btn" onclick="saveSketch()" style="color:#059669;border-color:#059669;">💾 Skizze</button>
-        </div>
-        <div class="toolbar-sep"></div>
-        <div class="tool-group">
-          <button class="tool-btn danger" onclick="resetToOriginalPos()" title="Koordinaten auf Originalposition aus Sondierkonzept zurücksetzen">⟳ Originalpos.</button>
+          <button class="tool-btn" id="btn-gps" onclick="toggleGPS()" style="opacity:0.45;">📍 GPS</button>
+          <button class="tool-btn" id="btn-gps-zoom" onclick="zoomToGPS()" title="Zu meinem Standort zoomen" style="display:none;">⊕ Standort</button>
         </div>
       </div>
     </div>
@@ -841,6 +1011,7 @@ function loadPairs() {
 }
 function savePairs() { localStorage.setItem(PAIRS_KEY, JSON.stringify(PAIRS)); }
 let PAIRS = loadPairs();
+let liveDistances = {};   // pairId -> meters, filled when GPS active
 
 // ============================================================
 // UNDO
@@ -984,13 +1155,21 @@ function renderCards() {
       <div class="card-km">KM ${p.km_rs.toFixed(3)} · Mast ${p.mast} · ${p.tiefe} m Soll · Gleis ${p.gleis}</div>
       <div class="card-zugang">${p.zugang}</div>
       ${(pd.tags||[]).length ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;">${(pd.tags||[]).map(tid=>{const t=customTags.find(x=>x.id===tid);return t?`<span style="padding:2px 7px;border-radius:10px;font-size:10px;font-weight:600;background:${t.color}22;color:${t.color};">${t.name}</span>`:''}).join('')}</div>` : ''}
-      <div class="card-footer">
-        <span class="status-badge status-${pd.status}">${statusLabel(pd.status)}</span>
-        <div class="card-metas">
-          ${hasSicherheit(p.id) ? '<span class="card-warn" title="Sicherheitsangaben vorhanden">⚠</span>' : ''}
-          ${hasFelddaten(p.id) ? '<span title="Felddaten vorhanden">📋</span>' : ''}
-          ${pd.sketch ? '<span title="Skizze vorhanden">✏️</span>' : ''}
-          <span class="card-comment-icon ${pd.comment?'has-comment':''}" title="${pd.comment?'Kommentar vorhanden':''}">💬</span>
+      <div class="card-footer" style="flex-direction:column;align-items:stretch;gap:6px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div class="card-metas">
+            ${hasSicherheit(p.id) ? '<span class="card-warn" title="Sicherheitsangaben vorhanden">⚠</span>' : ''}
+            ${hasFelddaten(p.id) ? '<span title="Felddaten vorhanden">📋</span>' : ''}
+            ${pd.sketch ? '<span title="Skizze vorhanden">✏️</span>' : ''}
+            ${(pd.fotos||[]).length ? '<span title="Fotos vorhanden">📷</span>' : ''}
+            <span class="card-comment-icon ${pd.comment?'has-comment':''}" title="${pd.comment?'Kommentar vorhanden':''}">💬</span>
+          </div>
+          ${liveDistances[p.id] != null ? '<span class="dist-badge">'+formatDist(liveDistances[p.id])+'</span>' : ''}
+        </div>
+        <div class="quick-status-bar" onclick="event.stopPropagation()">
+          <button class="qs-btn qs-geplant ${pd.status==='geplant'?'qs-active':''}" onclick="quickStatus(${p.id},'geplant')">Geplant</button>
+          <button class="qs-btn qs-abklaerung ${pd.status==='abklaerung'?'qs-active':''}" onclick="quickStatus(${p.id},'abklaerung')">Abklärung</button>
+          <button class="qs-btn qs-abgeschlossen ${pd.status==='abgeschlossen'?'qs-active':''}" onclick="quickStatus(${p.id},'abgeschlossen')">Abgeschlossen</button>
         </div>
       </div>`;
     grid.appendChild(card);
@@ -1010,7 +1189,10 @@ let activeLayers = {};
 let isDrawMode = false;
 let currentTool = 'pen', currentColor = '#e53e3e', brushSize = 3;
 let isDrawing = false, lastX = 0, lastY = 0;
+let sketchStrokes = [];   // [{color, size, tool, points:[{lat,lng}]}]
+let currentStroke = null;
 let gpsMarker = null, gpsCircle = null, watchId = null;
+let searchQuery = '';
 let currentFeldTab = 'rs';
 let pendingDrag = null;
 let markersLocked = true;
@@ -1089,6 +1271,9 @@ function renderDetail() {
   loadSicherheit();
   loadFelddaten();
   loadSketchFromStorage();
+  renderFotos();
+  renderChangelog();
+  updateTypToggles();
 }
 
 // Nur den Status speichern und Buttons aktualisieren — kein Full-Rerender nötig
@@ -1318,6 +1503,50 @@ function loadFelddaten() {
 }
 
 // ============================================================
+// RS/RKS AKTIV SCHALTEN
+// ============================================================
+function setTypAktiv(typ, aktiv) {
+  const pd = getPairData(currentPairId);
+  const state = pd.typAktiv || { rs: true, rks: true };
+  state[typ] = aktiv;
+  setPairData(currentPairId, { typAktiv: state });
+  logChange(currentPairId, typ.toUpperCase() + ' Status', aktiv ? 'Aktiv' : 'Passiv');
+
+  // Toggle-Optik anpassen
+  updateTypToggles();
+  // Marker aktualisieren
+  const pair = PAIRS.find(p => p.id === currentPairId);
+  if (pair) addMarkers(pair);
+  renderCards();
+}
+
+function updateTypToggles() {
+  const pd = getPairData(currentPairId);
+  const state = pd.typAktiv || { rs: true, rks: true };
+
+  const rsCb = document.getElementById('rs-aktiv-cb');
+  const rksCb = document.getElementById('rks-aktiv-cb');
+  if (rsCb)  rsCb.checked  = state.rs  !== false;
+  if (rksCb) rksCb.checked = state.rks !== false;
+
+  // Slider-Position
+  const rsKnob  = document.getElementById('rs-slider-knob');
+  const rksKnob = document.getElementById('rks-slider-knob');
+  const rsSlider  = document.getElementById('rs-aktiv-slider');
+  const rksSlider = document.getElementById('rks-aktiv-slider');
+  if (rsKnob)  rsKnob.style.transform  = state.rs  !== false ? 'translateX(16px)' : 'translateX(0)';
+  if (rksKnob) rksKnob.style.transform = state.rks !== false ? 'translateX(16px)' : 'translateX(0)';
+  if (rsSlider)  rsSlider.style.background  = state.rs  !== false ? '#3b82f6' : '#d1d5db';
+  if (rksSlider) rksSlider.style.background = state.rks !== false ? '#ec4899' : '#d1d5db';
+
+  // Wrap-Rahmen dimmen wenn passiv
+  const rsWrap  = document.getElementById('rs-toggle-wrap');
+  const rksWrap = document.getElementById('rks-toggle-wrap');
+  if (rsWrap)  { rsWrap.style.opacity  = state.rs  !== false ? '1' : '0.45'; rsWrap.style.borderColor  = state.rs  !== false ? '#bfdbfe' : '#e5e7eb'; }
+  if (rksWrap) { rksWrap.style.opacity = state.rks !== false ? '1' : '0.45'; rksWrap.style.borderColor = state.rks !== false ? '#fce7f3' : '#e5e7eb'; }
+}
+
+// ============================================================
 // MAP + LAYERS
 // ============================================================
 function buildLayers() {
@@ -1328,10 +1557,6 @@ function buildLayers() {
   const swissLuftbild = L.tileLayer(
     'https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.swissimage/default/current/3857/{z}/{x}/{y}.jpeg',
     { attribution: '© <a href="https://swisstopo.admin.ch">swisstopo</a>', maxZoom: 20 });
-
-  const osm = L.tileLayer(
-    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-    { attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a>', maxZoom: 19 });
 
   const googleSat = L.tileLayer(
     'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
@@ -1353,7 +1578,6 @@ function buildLayers() {
       'swisstopo Luftbild': swissLuftbild,
       'Google Maps':        googleMaps,
       'Google Satellite':   googleSat,
-      'OpenStreetMap':      osm,
     },
     overlay: {
       'TG Kataster (Parzellen)': tgKataster,
@@ -1378,24 +1602,84 @@ function initMap() {
 
   addMarkers(pair);
   initSketchCanvas();
+  redrawSketch(); // Skizze nach Karteninitialisierung neu zeichnen
 }
 
 function addMarkers(pair) {
   if (rsMarker)  rsMarker.remove();
   if (rksMarker) rksMarker.remove();
+  const typAktiv = (getPairData(pair.id).typAktiv) || { rs: true, rks: true };
+  const rsAktiv  = typAktiv.rs  !== false;
+  const rksAktiv = typAktiv.rks !== false;
 
   const rsLL  = lv95ToWgs84(pair.rs.e,  pair.rs.n);
   const rksLL = lv95ToWgs84(pair.rks.e, pair.rks.n);
 
-  const mkIcon = (label, bg) => L.divIcon({
-    html: `<div style="background:${bg};color:white;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.35);">${label}</div>`,
-    iconSize:[30,30], iconAnchor:[15,15], className:''
-  });
+  const statusCol = { geplant:'#6b7280', abklaerung:'#d97706', abgeschlossen:'#059669' };
+  const pairStatus = getPairData(pair.id).status || 'geplant';
+  const statusRing = statusCol[pairStatus];
 
-  rsMarker = L.marker([rsLL.lat, rsLL.lng], { icon: mkIcon('RS','#2b6cb0'), zIndexOffset:100, draggable:false })
-    .addTo(leafletMap)
-    .bindPopup(`<b>RS ${pair.id}</b><br>E ${pair.rs.e} / N ${pair.rs.n}<br><small style="color:#b91c1c">🔒 Gesperrt</small>`);
+  // Bezugslinie: Symbole dynamisch positionieren damit Linien sich nicht kreuzen
+  // RS-Symbol: senkrecht zur Verbindungslinie, nach oben-links
+  // RKS-Symbol: senkrecht zur Verbindungslinie, nach oben-rechts
+  const OFFSET = 40; // px Versatz
 
+  // Symbole senkrecht zur Verbindungslinie RS→RKS positionieren
+  // So kreuzen sich die Bezugslinien nie
+  let rsOff = { dx: -OFFSET, dy: -OFFSET };
+  let rksOff = { dx: OFFSET, dy: -OFFSET };
+  if (leafletMap) {
+    const rsPx  = leafletMap.latLngToContainerPoint(L.latLng(rsLL.lat,  rsLL.lng));
+    const rksPx = leafletMap.latLngToContainerPoint(L.latLng(rksLL.lat, rksLL.lng));
+    const dx = rksPx.x - rsPx.x;
+    const dy = rksPx.y - rsPx.y;
+    const len = Math.sqrt(dx*dx + dy*dy) || 1;
+    // Normalisierter Senkrecht-Vektor (90° zur Verbindungslinie)
+    const perpX = -dy / len;
+    const perpY =  dx / len;
+    // RS: links der Linie (negativ senkrecht), leicht nach oben
+    rsOff  = { dx: Math.round(-perpX * OFFSET), dy: Math.round(-perpY * OFFSET - 10) };
+    // RKS: rechts der Linie (positiv senkrecht), leicht nach oben
+    rksOff = { dx: Math.round( perpX * OFFSET), dy: Math.round( perpY * OFFSET - 10) };
+  }
+
+  const mkLeaderIcon = (label, bg, unlocked=false, dx=0, dy=0, aktiv=true) => {
+    // dx/dy: Versatz des Kreises relativ zum Ankerpunkt (Koordinate)
+    const r = 17; // Kreisradius
+    const svgW = Math.abs(dx) + r*2 + 4;
+    const svgH = Math.abs(dy) + r*2 + 4;
+    // Ankerpunkt (Koordinate) in SVG-Koordinaten
+    const ax = dx < 0 ? svgW - 2 : 2;
+    const ay = dy < 0 ? svgH - 2 : 2;
+    // Kreismittelpunkt
+    const cx = dx < 0 ? r + 2 : svgW - r - 2;
+    const cy = dy < 0 ? r + 2 : svgH - r - 2;
+    const ring = unlocked ? '#f59e0b' : statusRing;
+    return L.divIcon({
+      html: `<div style="position:relative;">
+        <svg width="${svgW}" height="${svgH}" style="position:absolute;top:0;left:0;overflow:visible;">
+          <circle cx="${ax}" cy="${ay}" r="4" fill="${bg}" stroke="white" stroke-width="1.5"/>
+          <line x1="${ax}" y1="${ay}" x2="${cx}" y2="${cy}" stroke="${bg}" stroke-width="2" stroke-dasharray="4,2"/>
+          <circle cx="${cx}" cy="${cy}" r="${r}" fill="${aktiv ? bg : '#9ca3af'}" stroke="${ring}" stroke-width="3" opacity="${aktiv ? 1 : 0.5}"/>
+          <text x="${cx}" y="${cy-3}" text-anchor="middle" dominant-baseline="middle" fill="white" font-size="9" font-weight="700">${label}</text>
+          <text x="${cx}" y="${cy+7}" text-anchor="middle" dominant-baseline="middle" fill="white" font-size="8">${unlocked?'🔓':'🔒'}</text>
+        </svg>
+      </div>`,
+      iconSize: [svgW, svgH],
+      iconAnchor: [ax, ay],
+      className: ''
+    });
+  };
+
+  rsMarker = L.marker([rsLL.lat, rsLL.lng], {
+    icon: mkLeaderIcon('RS','#2b6cb0', false, rsOff.dx, rsOff.dy, rsAktiv),
+    zIndexOffset:100, draggable:false
+  }).addTo(leafletMap)
+    .bindPopup(`<b>RS ${pair.id}</b><br>E ${pair.rs.e} / N ${pair.rs.n}<br><br>
+      <button onclick="unlockMarkerFromPopup('rs')" style="width:100%;padding:5px 10px;background:#fef3c7;border:1px solid #fcd34d;color:#92400e;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;">🔓 Entsperren & verschieben</button>
+      <div style="font-size:10px;color:#9ca3af;margin-top:4px;text-align:center;">oder Marker lang drücken</div>`);
+
+  addLongPress(rsMarker, () => unlockMarker(rsMarker, 'RS'));
   rsMarker.on('dragstart', () => { if (pendingDrag) cancelDrag(); });
   rsMarker.on('dragend', () => {
     const origLL = lv95ToWgs84(PAIRS.find(x=>x.id===currentPairId).rs.e, PAIRS.find(x=>x.id===currentPairId).rs.n);
@@ -1405,10 +1689,15 @@ function addMarkers(pair) {
     showDragConfirm('RS', newLv);
   });
 
-  rksMarker = L.marker([rksLL.lat, rksLL.lng], { icon: mkIcon('RKS','#9d174d'), zIndexOffset:100, draggable:false })
-    .addTo(leafletMap)
-    .bindPopup(`<b>RKS ${pair.id}</b><br>E ${pair.rks.e} / N ${pair.rks.n}<br><small style="color:#b91c1c">🔒 Gesperrt</small>`);
+  rksMarker = L.marker([rksLL.lat, rksLL.lng], {
+    icon: mkLeaderIcon('RKS','#9d174d', false, rksOff.dx, rksOff.dy, rksAktiv),
+    zIndexOffset:100, draggable:false
+  }).addTo(leafletMap)
+    .bindPopup(`<b>RKS ${pair.id}</b><br>E ${pair.rks.e} / N ${pair.rks.n}<br><br>
+      <button onclick="unlockMarkerFromPopup('rks')" style="width:100%;padding:5px 10px;background:#fef3c7;border:1px solid #fcd34d;color:#92400e;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;">🔓 Entsperren & verschieben</button>
+      <div style="font-size:10px;color:#9ca3af;margin-top:4px;text-align:center;">oder Marker lang drücken</div>`);
 
+  addLongPress(rksMarker, () => unlockMarker(rksMarker, 'RKS'));
   rksMarker.on('dragstart', () => { if (pendingDrag) cancelDrag(); });
   rksMarker.on('dragend', () => {
     const origLL = lv95ToWgs84(PAIRS.find(x=>x.id===currentPairId).rks.e, PAIRS.find(x=>x.id===currentPairId).rks.n);
@@ -1418,6 +1707,87 @@ function addMarkers(pair) {
     showDragConfirm('RKS', newLv);
   });
 }
+
+// ============================================================
+// MARKER ENTSPERREN (Lang drücken)
+// ============================================================
+function addLongPress(marker, callback) {
+  let timer = null;
+  const el = () => marker.getElement();
+  const start = () => { timer = setTimeout(() => { callback(); timer = null; }, 700); };
+  const cancel = () => { if (timer) { clearTimeout(timer); timer = null; } };
+  marker.on('add', () => {
+    if (!el()) return;
+    el().addEventListener('touchstart', start, { passive: true });
+    el().addEventListener('touchend', cancel);
+    el().addEventListener('touchmove', cancel);
+    el().addEventListener('mousedown', start);
+    el().addEventListener('mouseup', cancel);
+    el().addEventListener('mouseleave', cancel);
+  });
+}
+
+function unlockMarker(marker, label) {
+  marker.dragging.enable();
+  marker.closePopup();
+  // Icon auf entsperrt umschalten
+  const isRS = label === 'RS';
+  const bg = isRS ? '#2b6cb0' : '#9d174d';
+  const statusCol = { geplant:'#6b7280', abklaerung:'#d97706', abgeschlossen:'#059669' };
+  const pairStatus = getPairData(currentPairId).status || 'geplant';
+  const dx = label === 'RS' ? -36 : 36;
+  const OFFSET2 = 36, r2 = 17;
+  const svgW2 = OFFSET2 + r2*2 + 4, svgH2 = OFFSET2 + r2*2 + 4;
+  const ax2 = dx < 0 ? svgW2 - 2 : 2, ay2 = svgH2 - 2;
+  const cx2 = dx < 0 ? r2 + 2 : svgW2 - r2 - 2, cy2 = r2 + 2;
+  marker.setIcon(L.divIcon({
+    html: `<div><svg width="${svgW2}" height="${svgH2}" style="overflow:visible;">
+      <circle cx="${ax2}" cy="${ay2}" r="4" fill="${bg}" stroke="white" stroke-width="1.5"/>
+      <line x1="${ax2}" y1="${ay2}" x2="${cx2}" y2="${cy2}" stroke="#f59e0b" stroke-width="2" stroke-dasharray="4,2"/>
+      <circle cx="${cx2}" cy="${cy2}" r="${r2}" fill="${bg}" stroke="#f59e0b" stroke-width="3" style="animation:pulse 1s infinite"/>
+      <text x="${cx2}" y="${cy2-3}" text-anchor="middle" dominant-baseline="middle" fill="white" font-size="9" font-weight="700">${label}</text>
+      <text x="${cx2}" y="${cy2+7}" text-anchor="middle" dominant-baseline="middle" fill="white" font-size="8">🔓</text>
+    </svg></div>`,
+    iconSize:[svgW2,svgH2], iconAnchor:[ax2,ay2], className:''
+  }));
+  marker.setPopupContent(`<b>${label}</b><br><span style="color:#f59e0b;font-weight:700;">🔓 Ziehen zum Verschieben</span><br>
+    <button onclick="relockMarker('${label}')" style="margin-top:6px;width:100%;padding:5px;background:#fee2e2;border:1px solid #fca5a5;color:#b91c1c;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;">🔒 Wieder sperren</button>`);
+  // Nach 15 Sek automatisch sperren
+  setTimeout(() => relockMarker(label), 15000);
+}
+
+function relockMarker(label) {
+  const marker = label === 'RS' ? rsMarker : rksMarker;
+  if (!marker) return;
+  marker.dragging.disable();
+  const bg = label === 'RS' ? '#2b6cb0' : '#9d174d';
+  const dx = label === 'RS' ? -36 : 36;
+  const statusCol = { geplant:'#6b7280', abklaerung:'#d97706', abgeschlossen:'#059669' };
+  const statusRing = statusCol[getPairData(currentPairId).status || 'geplant'];
+  const OFFSET = 36, r = 17;
+  const svgW = OFFSET + r*2 + 4, svgH = OFFSET + r*2 + 4;
+  const ax = dx < 0 ? svgW - 2 : 2, ay = svgH - 2;
+  const cx = dx < 0 ? r + 2 : svgW - r - 2, cy = r + 2;
+  marker.setIcon(L.divIcon({
+    html: `<div><svg width="${svgW}" height="${svgH}" style="overflow:visible;">
+      <circle cx="${ax}" cy="${ay}" r="4" fill="${bg}" stroke="white" stroke-width="1.5"/>
+      <line x1="${ax}" y1="${ay}" x2="${cx}" y2="${cy}" stroke="${bg}" stroke-width="2" stroke-dasharray="4,2"/>
+      <circle cx="${cx}" cy="${cy}" r="${r}" fill="${bg}" stroke="${statusRing}" stroke-width="3"/>
+      <text x="${cx}" y="${cy-3}" text-anchor="middle" dominant-baseline="middle" fill="white" font-size="9" font-weight="700">${label}</text>
+      <text x="${cx}" y="${cy+7}" text-anchor="middle" dominant-baseline="middle" fill="white" font-size="8">🔒</text>
+    </svg></div>`,
+    iconSize:[svgW,svgH], iconAnchor:[ax,ay], className:''
+  }));
+  marker.closePopup();
+}
+
+function unlockMarkerFromPopup(type) {
+  const marker = type === 'rs' ? rsMarker : rksMarker;
+  const label  = type === 'rs' ? 'RS' : 'RKS';
+  if (marker) { marker.closePopup(); unlockMarker(marker, label); }
+}
+
+
 
 // Marker-Sperre beim Wechsel von Standort immer aktivieren
 function lockMarkers() {
@@ -1488,12 +1858,12 @@ function toggleGPS() {
     navigator.geolocation.clearWatch(watchId); watchId = null;
     if (gpsMarker)  { gpsMarker.remove();  gpsMarker  = null; }
     if (gpsCircle)  { gpsCircle.remove();  gpsCircle  = null; }
-    btn.textContent = '📍 GPS'; btn.classList.remove('active');
+    btn.textContent = '📍 GPS'; btn.classList.remove('active'); btn.style.opacity = '0.45';
     document.getElementById('btn-gps-zoom').style.display = 'none';
     return;
   }
   if (!navigator.geolocation) { alert('GPS wird von diesem Browser nicht unterstützt.'); return; }
-  btn.textContent = '⌛ GPS...';
+  btn.style.opacity = '1'; btn.textContent = '⌛ GPS...';
   watchId = navigator.geolocation.watchPosition(
     pos => {
       const { latitude: lat, longitude: lng, accuracy } = pos.coords;
@@ -1509,10 +1879,26 @@ function toggleGPS() {
         gpsMarker.setLatLng([lat,lng]).setPopupContent(`Mein Standort<br>Genauigkeit: ±${Math.round(accuracy)} m`);
         gpsCircle.setLatLng([lat,lng]).setRadius(accuracy);
       }
-      btn.textContent = '📍 Aktiv'; btn.classList.add('active');
+      btn.textContent = '📍 Aktiv'; btn.classList.add('active'); btn.style.opacity = '1';
       document.getElementById('btn-gps-zoom').style.display = '';
+      updateDistances(lat, lng);
     },
-    err => { btn.textContent = '📍 GPS'; alert('GPS: ' + err.message); watchId = null; document.getElementById('btn-gps-zoom').style.display = 'none'; },
+    err => {
+      btn.textContent = '📍 GPS'; watchId = null;
+      document.getElementById('btn-gps-zoom').style.display = 'none';
+      let msg = 'GPS-Fehler: ';
+      if (err.code === 1) {
+        msg = "GPS-Zugriff verweigert. Bitte App ueber https:// oeffnen (z.B. GitHub Pages).\n\nNicht als lokale Datei oeffnen.";
+      } else if (err.code === 2) {
+        msg = "GPS-Position konnte nicht ermittelt werden. Bitte GPS aktivieren.";
+      } else if (err.code === 3) {
+        msg = "GPS-Zeitüberschreitung. Bitte erneut versuchen oder ins Freie gehen.";
+      } else {
+        msg = 'GPS-Fehler: ' + err.message;
+      }
+      btn.style.opacity = '0.45';
+      alert(msg);
+    },
     { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
   );
 }
@@ -1524,17 +1910,18 @@ function zoomToGPS() {
 }
 
 // ============================================================
-// SKETCH CANVAS
+// SKETCH CANVAS — Vektor-basiert (geografische Koordinaten)
+// Striche werden als Lat/Lng gespeichert → zoom- und scrollfest
 // ============================================================
-// Sketch-Canvas einmalig initialisieren — Guard verhindert mehrfache Listener-Registrierung
 let sketchInitialized = false;
+
 function initSketchCanvas() {
   const canvas = document.getElementById('sketch-canvas');
   const container = document.querySelector('.map-container');
   function resize() {
     const r = container.getBoundingClientRect();
     canvas.width = r.width; canvas.height = r.height;
-    loadSketchFromStorage();
+    redrawSketch();
   }
   resize();
   if (!sketchInitialized) {
@@ -1548,6 +1935,11 @@ function initSketchCanvas() {
     canvas.addEventListener('touchmove',  e => { e.preventDefault(); draw(e.touches[0]); },      { passive:false });
     canvas.addEventListener('touchend', stopDraw);
   }
+  // Skizze bei Zoom und Pan neu zeichnen
+  if (leafletMap) {
+    leafletMap.off('zoom move', redrawSketch);
+    leafletMap.on('zoom move', redrawSketch);
+  }
 }
 
 function getCanvasPos(e) {
@@ -1555,48 +1947,184 @@ function getCanvasPos(e) {
   return { x: e.clientX - r.left, y: e.clientY - r.top };
 }
 
-function startDraw(e) { if (!isDrawMode) return; isDrawing=true; const p=getCanvasPos(e); lastX=p.x; lastY=p.y; }
+function canvasPosToLatLng(pos) {
+  // Pixel auf dem Canvas → geografische Koordinate via Leaflet
+  return leafletMap.containerPointToLatLng(L.point(pos.x, pos.y));
+}
+
+function latLngToCanvasPos(latlng) {
+  // Geografische Koordinate → Pixel auf dem Canvas
+  return leafletMap.latLngToContainerPoint(latlng);
+}
+
+function startDraw(e) {
+  if (!isDrawMode || !leafletMap) return;
+  isDrawing = true;
+  const pos = getCanvasPos(e);
+  lastX = pos.x; lastY = pos.y;
+  const latlng = canvasPosToLatLng(pos);
+  currentStroke = {
+    color: currentTool === 'eraser' ? null : currentColor,
+    size: brushSize,
+    tool: currentTool,
+    points: [{ lat: latlng.lat, lng: latlng.lng }]
+  };
+}
 
 function draw(e) {
-  if (!isDrawMode || !isDrawing) return;
+  if (!isDrawMode || !isDrawing || !currentStroke || !leafletMap) return;
   const canvas = document.getElementById('sketch-canvas');
   const ctx = canvas.getContext('2d');
   const pos = getCanvasPos(e);
-  ctx.beginPath(); ctx.moveTo(lastX,lastY); ctx.lineTo(pos.x,pos.y);
-  if (currentTool==='eraser') {
-    ctx.globalCompositeOperation='destination-out'; ctx.strokeStyle='rgba(0,0,0,1)'; ctx.lineWidth=brushSize*4;
+  const latlng = canvasPosToLatLng(pos);
+  currentStroke.points.push({ lat: latlng.lat, lng: latlng.lng });
+
+  // Aktuellen Segment direkt zeichnen (flüssiges Gefühl)
+  ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(pos.x, pos.y);
+  if (currentTool === 'eraser') {
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.strokeStyle = 'rgba(0,0,0,1)';
+    ctx.lineWidth = brushSize * 4;
   } else {
-    ctx.globalCompositeOperation='source-over'; ctx.strokeStyle=currentColor; ctx.lineWidth=brushSize;
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.strokeStyle = currentColor;
+    ctx.lineWidth = brushSize;
   }
-  ctx.lineCap='round'; ctx.lineJoin='round'; ctx.stroke();
-  lastX=pos.x; lastY=pos.y;
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.stroke();
+  lastX = pos.x; lastY = pos.y;
 }
 
-function stopDraw() { if(isDrawing){ isDrawing=false; saveSketchToStorage(); } }
+function stopDraw() {
+  if (!isDrawing) return;
+  isDrawing = false;
+  if (currentStroke && currentStroke.points.length > 1) {
+    if (currentStroke.tool === 'eraser') {
+      // Radierer: entferne Striche die in der Nähe liegen
+      applyEraser(currentStroke);
+    } else {
+      sketchStrokes.push(currentStroke);
+    }
+    currentStroke = null;
+    redrawSketch();
+    saveSketchToStorage();
+  } else {
+    currentStroke = null;
+  }
+}
 
-function setDrawMode(draw) {
-  isDrawMode = draw;
+function applyEraser(eraserStroke) {
+  // Entferne Striche deren Punkte nah am Radierer-Pfad liegen
+  if (!leafletMap || typeof L === 'undefined') return;
+  const threshold = eraserStroke.size * 4;
+  sketchStrokes = sketchStrokes.filter(stroke => {
+    return !stroke.points.some(sp => {
+      const sPos = latLngToCanvasPos(L.latLng(sp.lat, sp.lng));
+      return eraserStroke.points.some(ep => {
+        const ePos = latLngToCanvasPos(L.latLng(ep.lat, ep.lng));
+        const dx = sPos.x - ePos.x, dy = sPos.y - ePos.y;
+        return Math.sqrt(dx*dx + dy*dy) < threshold;
+      });
+    });
+  });
+}
+
+function redrawSketch() {
+  // Alle Striche anhand aktueller Kartenposition neu auf Canvas zeichnen
   const canvas = document.getElementById('sketch-canvas');
-  canvas.classList.toggle('draw-mode', draw);
-  if (leafletMap) {
-    draw ? (leafletMap.dragging.disable(), leafletMap.scrollWheelZoom.disable(), leafletMap.doubleClickZoom.disable())
-         : (leafletMap.dragging.enable(),  leafletMap.scrollWheelZoom.enable(),  leafletMap.doubleClickZoom.enable());
-  }
-  document.getElementById('btn-mode-pan').classList.toggle('active', !draw);
-  document.getElementById('btn-mode-draw').classList.toggle('active', draw);
-  document.getElementById('draw-tools').style.opacity  = draw ? '1' : '0.4';
-  document.getElementById('color-tools').style.opacity = draw ? '1' : '0.4';
+  if (!canvas || !leafletMap || typeof L === 'undefined') return;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  sketchStrokes.forEach(stroke => {
+    if (stroke.points.length < 2) return;
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.strokeStyle = stroke.color;
+    ctx.lineWidth = stroke.size;
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.beginPath();
+    stroke.points.forEach((pt, i) => {
+      const pos = latLngToCanvasPos(L.latLng(pt.lat, pt.lng));
+      i === 0 ? ctx.moveTo(pos.x, pos.y) : ctx.lineTo(pos.x, pos.y);
+    });
+    ctx.stroke();
+  });
 }
 
-function setMapOpacity(val) {
-  document.getElementById('map-opacity-label').textContent = val + '%';
-  document.getElementById('map').style.opacity = val / 100;
+let currentMode = 'pan'; // pan | draw | measure
+
+function setMode(mode) {
+  // Stop measure if switching away
+  if (currentMode === 'measure' && mode !== 'measure') stopMeasure();
+  currentMode = mode;
+  const isDraw = mode === 'draw';
+  const isMeasure = mode === 'measure';
+  isDrawMode = isDraw;
+  const canvas = document.getElementById('sketch-canvas');
+  canvas.classList.toggle('draw-mode', isDraw);
+  if (leafletMap) {
+    if (isDraw || isMeasure) {
+      leafletMap.dragging.disable();
+      leafletMap.scrollWheelZoom.disable();
+      leafletMap.doubleClickZoom.disable();
+    } else {
+      leafletMap.dragging.enable();
+      leafletMap.scrollWheelZoom.enable();
+      leafletMap.doubleClickZoom.enable();
+    }
+  }
+  document.getElementById('btn-mode-pan').classList.toggle('active', mode === 'pan');
+  document.getElementById('btn-mode-draw').classList.toggle('active', isDraw);
+  document.getElementById('btn-mode-measure').classList.toggle('active', isMeasure);
+
+  // Unterfunktionen dynamisch ein-/ausblenden
+  document.querySelectorAll('.toolbar-draw-tools').forEach(el => {
+    el.style.display = isDraw ? 'flex' : 'none';
+  });
+  document.getElementById('pan-tools').style.display = (mode === 'pan') ? 'flex' : 'none';
+  document.getElementById('measure-tools').style.display = isMeasure ? 'flex' : 'none';
+
+  if (isMeasure) startMeasure();
+}
+
+// Keep old setDrawMode for compatibility
+function setDrawMode(draw) { setMode(draw ? 'draw' : 'pan'); }
+
+function setMapOpacity(val, step) {
+  if (leafletMap) {
+    const opacity = val / 100;
+    // Nur Kacheln transparent machen — alle anderen Ebenen bleiben sichtbar
+    ['tilePane', 'shadowPane'].forEach(pane => {
+      const p = leafletMap.getPane(pane);
+      if (p) p.style.opacity = opacity;
+    });
+    // Marker, Overlay, Popup Ebenen explizit auf 1 setzen
+    ['markerPane', 'overlayPane', 'popupPane', 'tooltipPane'].forEach(pane => {
+      const p = leafletMap.getPane(pane);
+      if (p) p.style.opacity = '1';
+    });
+    // Skizze-Canvas ebenfalls auf 1 halten
+    const canvas = document.getElementById('sketch-canvas');
+    if (canvas) canvas.style.opacity = '1';
+  }
+  if (step) {
+    [1,2,3,4].forEach(s => {
+      const btn = document.getElementById('op-btn-' + s);
+      if (btn) btn.classList.toggle('active', s === step);
+    });
+  }
 }
 
 function setTool(t) {
   currentTool = t;
   document.getElementById('btn-pen').classList.toggle('active', t==='pen');
   document.getElementById('btn-eraser').classList.toggle('active', t==='eraser');
+}
+
+function setBrushSize(step, size) {
+  brushSize = size;
+  [1,2,3,4].forEach(s => {
+    const btn = document.getElementById('size-btn-' + s);
+    if (btn) btn.classList.toggle('active', s === step);
+  });
 }
 
 function setColor(c, el) {
@@ -1608,8 +2136,8 @@ function setColor(c, el) {
 
 function clearSketch() {
   if (!confirm('Skizze wirklich löschen?')) return;
-  const canvas = document.getElementById('sketch-canvas');
-  canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);
+  sketchStrokes = [];
+  redrawSketch();
   setPairData(currentPairId, { sketch: null });
 }
 
@@ -1622,23 +2150,27 @@ function saveSketch() {
 }
 
 function saveSketchToStorage() {
-  const canvas = document.getElementById('sketch-canvas');
-  if (!canvas) return;
-  const d = canvas.getContext('2d').getImageData(0,0,canvas.width,canvas.height).data;
-  if (d.some(v => v!==0)) setPairData(currentPairId, { sketch: canvas.toDataURL() });
+  if (sketchStrokes.length > 0) {
+    setPairData(currentPairId, { sketch: JSON.stringify(sketchStrokes) });
+  } else {
+    setPairData(currentPairId, { sketch: null });
+  }
 }
 
 function loadSketchFromStorage() {
-  const canvas = document.getElementById('sketch-canvas');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  ctx.clearRect(0,0,canvas.width,canvas.height);
   const pd = getPairData(currentPairId);
+  sketchStrokes = [];
   if (pd.sketch) {
-    const img = new Image();
-    img.onload = () => ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-    img.src = pd.sketch;
+    try {
+      const parsed = JSON.parse(pd.sketch);
+      if (Array.isArray(parsed)) sketchStrokes = parsed;
+    } catch(e) {
+      // Alte Bild-Skizze (base64) — kann nicht migriert werden, ignorieren
+      sketchStrokes = [];
+    }
   }
+  // Nur zeichnen wenn Karte bereits initialisiert ist
+  if (leafletMap) redrawSketch();
 }
 
 // ============================================================
@@ -1647,6 +2179,7 @@ function loadSketchFromStorage() {
 let currentOverviewView = 'karten';
 let overviewMap = null;
 let overviewMarkers = [];
+let overviewGpsMarker = null, overviewGpsCircle = null, overviewWatchId = null;
 
 function setOverviewView(view) {
   currentOverviewView = view;
@@ -1657,6 +2190,15 @@ function setOverviewView(view) {
   document.getElementById('list-wrap').style.display        = view==='liste'  ? 'block' : 'none';
   document.getElementById('overview-map-wrap').style.display= view==='karte'  ? 'block' : 'none';
 
+  if (view!=='karte' && overviewWatchId !== null) {
+    navigator.geolocation.clearWatch(overviewWatchId); overviewWatchId = null;
+    if (overviewGpsMarker) { overviewGpsMarker.remove(); overviewGpsMarker = null; }
+    if (overviewGpsCircle) { overviewGpsCircle.remove(); overviewGpsCircle = null; }
+    const b = document.getElementById('btn-overview-gps');
+    if (b) { b.textContent = '📍 GPS'; b.style.opacity = '0.45'; b.classList.remove('btn-primary'); }
+    const bz = document.getElementById('btn-overview-gps-zoom');
+    if (bz) bz.style.display = 'none';
+  }
   if (view==='liste')  renderList();
   if (view==='karte')  initOverviewMap();
 }
@@ -1810,6 +2352,52 @@ function initOverviewMap() {
     return div;
   };
   legend.addTo(overviewMap);
+}
+
+function toggleOverviewGPS() {
+  const btn = document.getElementById('btn-overview-gps');
+  if (overviewWatchId !== null) {
+    navigator.geolocation.clearWatch(overviewWatchId); overviewWatchId = null;
+    if (overviewGpsMarker) { overviewGpsMarker.remove(); overviewGpsMarker = null; }
+    if (overviewGpsCircle) { overviewGpsCircle.remove(); overviewGpsCircle = null; }
+    btn.textContent = '📍 GPS'; btn.style.opacity = '0.45';
+    btn.classList.remove('btn-primary');
+    document.getElementById('btn-overview-gps-zoom').style.display = 'none';
+    return;
+  }
+  if (!navigator.geolocation) { alert('GPS wird von diesem Browser nicht unterstützt.'); return; }
+  btn.style.opacity = '1'; btn.textContent = '⌛ GPS...';
+  overviewWatchId = navigator.geolocation.watchPosition(
+    pos => {
+      const { latitude: lat, longitude: lng, accuracy } = pos.coords;
+      const gpsIcon = L.divIcon({ html: '<div class="gps-dot"></div>', iconSize:[14,14], iconAnchor:[7,7], className:'' });
+      if (!overviewGpsMarker) {
+        overviewGpsMarker = L.marker([lat,lng], { icon: gpsIcon, zIndexOffset:1000 }).addTo(overviewMap)
+          .bindPopup(`Mein Standort<br>Genauigkeit: ±${Math.round(accuracy)} m`);
+        overviewGpsCircle = L.circle([lat,lng], { radius:accuracy, color:'#3b82f6', fillColor:'#3b82f6', fillOpacity:0.1, weight:1 }).addTo(overviewMap);
+        overviewMap.panTo([lat,lng]);
+      } else {
+        overviewGpsMarker.setLatLng([lat,lng]).setPopupContent(`Mein Standort<br>Genauigkeit: ±${Math.round(accuracy)} m`);
+        overviewGpsCircle.setLatLng([lat,lng]).setRadius(accuracy);
+      }
+      btn.textContent = '📍 Aktiv'; btn.style.opacity = '1'; btn.classList.add('btn-primary');
+      document.getElementById('btn-overview-gps-zoom').style.display = '';
+    },
+    err => {
+      btn.textContent = '📍 GPS'; btn.style.opacity = '0.45'; overviewWatchId = null;
+      document.getElementById('btn-overview-gps-zoom').style.display = 'none';
+      let msg = "GPS-Zugriff verweigert. Bitte App ueber https:// oeffnen (GitHub Pages).";
+
+      if (err.code === 2) msg = "GPS-Position konnte nicht ermittelt werden.";
+      if (err.code === 3) msg = "GPS-Zeitüberschreitung. Bitte erneut versuchen.";
+      alert(msg);
+    },
+    { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
+  );
+}
+
+function zoomToOverviewGPS() {
+  if (overviewGpsMarker && overviewMap) overviewMap.setView(overviewGpsMarker.getLatLng(), 17);
 }
 
 function refreshOverviewMap() {
@@ -2382,6 +2970,16 @@ function getFilteredSorted() {
   let list = [...PAIRS];
   if (currentFilter !== 'alle') list = list.filter(p => getPairData(p.id).status === currentFilter);
   if (activeTagFilter) list = list.filter(p => (getPairData(p.id).tags || []).includes(activeTagFilter));
+  if (searchQuery) {
+    const q = searchQuery.toLowerCase();
+    list = list.filter(p =>
+      (p.bezeichnung||'').toLowerCase().includes(q) ||
+      ('standort '+p.id).includes(q) ||
+      String(p.mast).includes(q) ||
+      String(p.km_rs).includes(q) ||
+      (p.zugang||'').toLowerCase().includes(q)
+    );
+  }
   if (currentSort === 'name')   list.sort((a,b) => (a.bezeichnung||'Standort '+a.id).localeCompare(b.bezeichnung||'Standort '+b.id, 'de'));
   if (currentSort === 'tag')    list.sort((a,b) => { const da = tagDates[a.tag]||'9999'; const db = tagDates[b.tag]||'9999'; return da < db ? -1 : da > db ? 1 : 0; });
   if (currentSort === 'km')     list.sort((a,b) => a.km_rs - b.km_rs);
@@ -2406,11 +3004,605 @@ function renderTagFilterChips() {
 }
 
 // ============================================================
+// DATEN SICHERN / LADEN (JSON Export/Import für Teamarbeit)
+// ============================================================
+function openExportModal() {
+  document.getElementById('export-daten-modal').classList.add('open');
+}
+function closeExportDatenModal() {
+  document.getElementById('export-daten-modal').classList.remove('open');
+}
+
+async function exportAppDaten() {
+  const inclKarte  = document.getElementById('exp-opt-karte').checked;
+  const inclSkizze = document.getElementById('exp-opt-skizze').checked;
+
+  const exportData = {
+    version: 2,
+    exportiert_am: new Date().toLocaleString('de-CH'),
+    optionen: { karte: inclKarte, skizze: inclSkizze },
+    pairs: PAIRS,
+    pairData: {},
+    customTags: customTags,
+    termine: JSON.parse(localStorage.getItem('sondagen_termine') || '{}'),
+  };
+
+  PAIRS.forEach(p => {
+    const key = 'pd_' + p.id;
+    const val = localStorage.getItem(key);
+    if (val) {
+      const pd = JSON.parse(val);
+      // Skizze optional weglassen
+      if (!inclSkizze) delete pd.sketch;
+      exportData.pairData[p.id] = pd;
+    }
+  });
+
+  // Kartenausschnitt: Screenshot via html2canvas
+  if (inclKarte) {
+    const mapEl = document.getElementById('map');
+    if (mapEl && typeof html2canvas !== 'undefined') {
+      try {
+        document.getElementById('exp-status').textContent = '📸 Karte wird erfasst...';
+        const canvas = await html2canvas(mapEl, { useCORS: true, logging: false });
+        exportData.kartenausschnitt = canvas.toDataURL('image/jpeg', 0.7);
+      } catch(e) {
+        exportData.kartenausschnitt = null;
+      }
+    }
+  }
+
+  document.getElementById('exp-status').textContent = '';
+  closeExportDatenModal();
+
+  const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  const datum = new Date().toLocaleDateString('de-CH').replace(/\./g, '-');
+  a.download = `Sondagen_Daten_${datum}.json`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+function importAppDaten(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.pairs || !Array.isArray(data.pairs)) {
+        alert('❌ Ungültige Datei. Bitte eine gültige Sondagen-Datei (.json) wählen.'); return;
+      }
+      if (!confirm(`Daten vom ${data.exportiert_am || '?'} laden?\n\n⚠️ Alle aktuellen Daten auf diesem Gerät werden überschrieben!`)) {
+        input.value = ''; return;
+      }
+      PAIRS.length = 0;
+      data.pairs.forEach(p => PAIRS.push(p));
+      savePairs();
+      if (data.pairData) {
+        Object.entries(data.pairData).forEach(([id, val]) => {
+          localStorage.setItem('pd_' + id, JSON.stringify(val));
+        });
+      }
+      if (data.customTags) {
+        customTags.length = 0;
+        data.customTags.forEach(t => customTags.push(t));
+        localStorage.setItem('sondagen_custom_tags', JSON.stringify(customTags));
+      }
+      if (data.termine) {
+        localStorage.setItem('sondagen_termine', JSON.stringify(data.termine));
+      }
+      updateProgress();
+      renderTagFilterChips();
+      renderCards();
+      alert('✅ Daten erfolgreich geladen!');
+    } catch(err) {
+      alert('❌ Fehler beim Lesen der Datei: ' + err.message);
+    }
+    input.value = '';
+  };
+  reader.readAsText(file);
+}
+
+
+// ============================================================
+// SUCHE
+// ============================================================
+function onSearchInput(val) {
+  searchQuery = val.trim();
+  refreshCurrentView();
+}
+
+// ============================================================
+// SCHNELLSTATUS
+// ============================================================
+function quickStatus(pairId, status) {
+  setPairData(pairId, { status });
+  logChange(pairId, 'Status', statusLabel(status));
+  updateProgress();
+  renderCards();
+}
+
+// ============================================================
+// DISTANZANZEIGE
+// ============================================================
+function formatDist(m) {
+  return m < 1000 ? Math.round(m) + ' m' : (m/1000).toFixed(1) + ' km';
+}
+
+function haversine(lat1, lon1, lat2, lon2) {
+  const R = 6371000, dLat = (lat2-lat1)*Math.PI/180, dLon = (lon2-lon1)*Math.PI/180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function updateDistances(lat, lng) {
+  PAIRS.forEach(p => {
+    const c = pairCenter(p);
+    liveDistances[p.id] = haversine(lat, lng, c.lat, c.lng);
+  });
+  refreshCurrentView();
+}
+
+// ============================================================
+// FOTOS
+// ============================================================
+function addFoto(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const pd = getPairData(currentPairId);
+    const fotos = pd.fotos || [];
+    fotos.push({ data: e.target.result, ts: new Date().toLocaleString('de-CH') });
+    setPairData(currentPairId, { fotos });
+    logChange(currentPairId, 'Foto', 'hinzugefügt');
+    renderFotos();
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
+}
+
+function renderFotos() {
+  const inner = document.getElementById('photo-grid-inner');
+  if (!inner) return;
+  const pd = getPairData(currentPairId);
+  const fotos = pd.fotos || [];
+  inner.innerHTML = '';
+  fotos.forEach((f, i) => {
+    const img = document.createElement('img');
+    img.className = 'photo-thumb';
+    img.src = f.data;
+    img.title = f.ts;
+    img.onclick = () => openLightbox(i);
+    inner.appendChild(img);
+  });
+}
+
+let lightboxIndex = 0;
+function openLightbox(idx) {
+  lightboxIndex = idx;
+  const pd = getPairData(currentPairId);
+  const fotos = pd.fotos || [];
+  document.getElementById('lb-img').src = fotos[idx].data;
+  document.getElementById('photo-lightbox').classList.add('open');
+}
+
+function closeLightbox() {
+  document.getElementById('photo-lightbox').classList.remove('open');
+}
+
+function deleteLightboxFoto() {
+  if (!confirm('Foto löschen?')) return;
+  const pd = getPairData(currentPairId);
+  const fotos = pd.fotos || [];
+  fotos.splice(lightboxIndex, 1);
+  setPairData(currentPairId, { fotos });
+  logChange(currentPairId, 'Foto', 'gelöscht');
+  closeLightbox();
+  renderFotos();
+}
+
+// ============================================================
+// ÄNDERUNGSPROTOKOLL
+// ============================================================
+function clearChangelog() {
+  if (!confirm('Änderungsprotokoll wirklich löschen?')) return;
+  setPairData(currentPairId, { changelog: [] });
+  renderChangelog();
+}
+
+function logChange(pairId, field, value) {
+  const pd = getPairData(pairId);
+  const log = pd.changelog || [];
+  log.unshift({ ts: new Date().toLocaleString('de-CH'), field, value });
+  if (log.length > 30) log.pop();
+  setPairData(pairId, { changelog: log });
+}
+
+function renderChangelog() {
+  const el = document.getElementById('changelog-list');
+  if (!el) return;
+  const pd = getPairData(currentPairId);
+  const log = pd.changelog || [];
+  if (!log.length) { el.innerHTML = '<div style="font-size:11px;color:#9ca3af;">Noch keine Änderungen.</div>'; return; }
+  el.innerHTML = log.map(e =>
+    `<div class="changelog-entry"><strong>${e.field}:</strong> ${e.value} <span style="float:right;opacity:0.6;">${e.ts}</span></div>`
+  ).join('');
+}
+
+// ============================================================
+// PDF-BERICHT PRO STANDORT
+// ============================================================
+async function exportPdfBericht() {
+  const { jsPDF } = window.jspdf;
+  const pair = PAIRS.find(p => p.id === currentPairId);
+  const pd = getPairData(currentPairId);
+  const fd = pd.felddaten || {};
+  const s  = pd.sicherheit || {};
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+  // Header
+  doc.setFillColor(26, 58, 92);
+  doc.rect(0, 0, 210, 22, 'F');
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(14); doc.setFont('helvetica','bold');
+  doc.text(pair.bezeichnung || 'Standort ' + pair.id, 14, 10);
+  doc.setFontSize(9); doc.setFont('helvetica','normal');
+  doc.text(`Erstellt: ${new Date().toLocaleString('de-CH')}`, 14, 16);
+
+  doc.setTextColor(26,58,92);
+  let y = 30;
+
+  // Metadaten
+  doc.setFontSize(11); doc.setFont('helvetica','bold');
+  doc.text('Metadaten', 14, y); y += 6;
+  doc.autoTable({
+    startY: y, margin: {left:14,right:14},
+    styles: {fontSize:9, cellPadding:2},
+    headStyles: {fillColor:[26,58,92], textColor:255},
+    body: [
+      ['KM RS', pair.km_rs.toFixed(3), 'KM RKS', pair.km_rks.toFixed(3)],
+      ['Mast', pair.mast, 'Tiefe Soll', pair.tiefe + ' m'],
+      ['Gleis', pair.gleis, 'Tagarbeit', pair.tag],
+      ['RS LV95', pair.rs.e + ' / ' + pair.rs.n, 'RKS LV95', pair.rks.e + ' / ' + pair.rks.n],
+      ['Status', statusLabel(pd.status || 'geplant'), 'Zugang', pair.zugang||''],
+    ],
+    columnStyles: {0:{fontStyle:'bold',cellWidth:28},2:{fontStyle:'bold',cellWidth:28}}
+  });
+  y = doc.lastAutoTable.finalY + 6;
+
+  // Felddaten
+  doc.setFontSize(11); doc.setFont('helvetica','bold');
+  doc.text('Felddaten', 14, y); y += 6;
+  doc.autoTable({
+    startY: y, margin: {left:14,right:14},
+    styles: {fontSize:9, cellPadding:2},
+    headStyles: {fillColor:[26,58,92], textColor:255},
+    head: [['', 'RS', 'RKS']],
+    body: [
+      ['Tiefe Ist (m)', fd.rs_tiefe_ist||'–', fd.rks_tiefe_ist||'–'],
+      ['Abbruchgrund', fd.rs_abbruch||'–', fd.rks_abbruch||'–'],
+      ['Grundwasser', fd.rs_gw==='ja'?`Ja bei ${fd.rs_gw_tiefe||'?'} m`:'Nein', fd.rks_gw==='ja'?`Ja bei ${fd.rks_gw_tiefe||'?'} m`:'Nein'],
+      ['Bemerkung', fd.rs_bemerkung||'–', fd.rks_schicht||'–'],
+    ]
+  });
+  y = doc.lastAutoTable.finalY + 6;
+
+  // Sicherheit
+  if (s.siwa) {
+    doc.setFontSize(11); doc.setFont('helvetica','bold');
+    doc.text('Sicherheit', 14, y); y += 6;
+    doc.autoTable({
+      startY: y, margin: {left:14,right:14},
+      styles: {fontSize:9, cellPadding:2},
+      headStyles: {fillColor:[146,64,14], textColor:255},
+      body: [
+        ['SiWä', s.siwa||'k.A.', 'Gleissperrung', s.sperrung||'k.A.'],
+        ['Fahrstrom', s.strom||'k.A.', 'PSA', (s.psa||[]).join(', ')||'–'],
+        ['Hinweise', {content: s.hinweise||'–', colSpan:3}],
+      ]
+    });
+    y = doc.lastAutoTable.finalY + 6;
+  }
+
+  // Kommentar
+  if (pd.comment) {
+    doc.setFontSize(11); doc.setFont('helvetica','bold');
+    doc.text('Kommentar', 14, y); y += 5;
+    doc.setFontSize(9); doc.setFont('helvetica','normal'); doc.setTextColor(60,60,60);
+    const lines = doc.splitTextToSize(pd.comment, 182);
+    doc.text(lines, 14, y); y += lines.length * 4.5 + 4;
+  }
+
+  // Kartenausschnitt + Skizze kombiniert
+  const mapEl = document.getElementById('map');
+  const sketchEl = document.getElementById('sketch-canvas');
+  if (mapEl && typeof html2canvas !== 'undefined' && y < 240) {
+    try {
+      if (leafletMap) leafletMap.invalidateSize();
+      await new Promise(r => setTimeout(r, 300));
+      const mapRect = mapEl.getBoundingClientRect();
+
+      // Karte als Bild erfassen
+      const mapCanvas = await html2canvas(mapEl, {
+        useCORS: true, logging: false, allowTaint: true,
+        width: mapRect.width, height: mapRect.height, scale: 1
+      });
+
+      // Skizze darüber legen falls vorhanden
+      const combined = document.createElement('canvas');
+      combined.width  = mapCanvas.width;
+      combined.height = mapCanvas.height;
+      const ctx = combined.getContext('2d');
+      ctx.drawImage(mapCanvas, 0, 0);
+      if (sketchEl && sketchStrokes.length > 0) {
+        // Skizze neu auf combined canvas zeichnen
+        sketchStrokes.forEach(stroke => {
+          if (stroke.points.length < 2) return;
+          ctx.globalCompositeOperation = 'source-over';
+          ctx.strokeStyle = stroke.color;
+          ctx.lineWidth = stroke.size;
+          ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+          ctx.beginPath();
+          stroke.points.forEach((pt, i) => {
+            const pos = leafletMap.latLngToContainerPoint(L.latLng(pt.lat, pt.lng));
+            i === 0 ? ctx.moveTo(pos.x, pos.y) : ctx.lineTo(pos.x, pos.y);
+          });
+          ctx.stroke();
+        });
+      }
+
+      const imgData = combined.toDataURL('image/jpeg', 0.85);
+      const srcRatio = combined.width / combined.height;
+      const maxH = Math.min(110, 270 - y);
+      const imgW = 182;
+      const imgH = Math.min(imgW / srcRatio, maxH);
+      doc.setTextColor(26,58,92); doc.setFont('helvetica','bold'); doc.setFontSize(11);
+      doc.text('Kartenausschnitt', 14, y); y += 5;
+      doc.addImage(imgData, 'JPEG', 14, y, imgW, imgH);
+      y += imgH + 4;
+    } catch(e) { console.warn('Karte konnte nicht erfasst werden:', e); }
+  }
+
+  // Fotos
+  const fotos = pd.fotos || [];
+  if (fotos.length > 0 && y < 260) {
+    doc.setTextColor(26,58,92); doc.setFont('helvetica','bold'); doc.setFontSize(11);
+    doc.text('Fotos', 14, y); y += 5;
+    let fx = 14;
+    for (const foto of fotos.slice(0,4)) {
+      if (fx + 44 > 196) { fx = 14; y += 46; }
+      doc.addImage(foto.data, 'JPEG', fx, y, 42, 42);
+      fx += 46;
+    }
+  }
+
+  // Changelog
+  const log = pd.changelog || [];
+  if (log.length) {
+    if (y > 240) { doc.addPage(); y = 20; }
+    else y += 8;
+    doc.setTextColor(26,58,92); doc.setFont('helvetica','bold'); doc.setFontSize(11);
+    doc.text('Änderungsprotokoll', 14, y); y += 6;
+    doc.autoTable({
+      startY: y, margin: {left:14,right:14},
+      styles: {fontSize:8, cellPadding:2},
+      headStyles: {fillColor:[26,58,92], textColor:255},
+      head:[['Datum/Zeit','Feld','Wert']],
+      body: log.slice(0,15).map(e => [e.ts, e.field, e.value])
+    });
+  }
+
+  doc.save(`Bericht_${pair.bezeichnung||'Standort_'+pair.id}_${new Date().toLocaleDateString('de-CH').replace(/\./g,'-')}.pdf`);
+}
+
+// ============================================================
+// OFFLINE SERVICE WORKER
+// ============================================================
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    const swCode = [
+      "const CACHE='sondagen-v1';",
+      "const URLS=['./','/index.html','https://unpkg.com/leaflet@1.9.4/dist/leaflet.css','https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'];",
+      "self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(URLS))));",
+      "self.addEventListener('fetch',e=>e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request))));"
+    ].join('\n');
+    const blob = new Blob([swCode], {type:'application/javascript'});
+    navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{});
+  });
+}
+
+// ============================================================
+// MESSFUNKTION
+// ============================================================
+let measurePoints = [];
+let measurePolyline = null;
+let measurePolygon = null;
+let measureMarkers = [];
+let measureLabel = null;
+let measureType = 'dist'; // 'dist' | 'area'
+
+function setMeasureType(type) {
+  measureType = type;
+  document.getElementById('btn-measure-dist').classList.toggle('active', type === 'dist');
+  document.getElementById('btn-measure-area').classList.toggle('active', type === 'area');
+  resetMeasure();
+}
+
+function resetMeasure() {
+  if (measurePolyline) { measurePolyline.remove(); measurePolyline = null; }
+  if (measurePolygon)  { measurePolygon.remove();  measurePolygon  = null; }
+  measureMarkers.forEach(m => m.remove()); measureMarkers = [];
+  if (measureLabel) { measureLabel.remove(); measureLabel = null; }
+  measurePoints = [];
+  showMeasureLabel(measureType === 'area' ? 'Ersten Eckpunkt antippen (mind. 3)' : 'Ersten Punkt antippen');
+}
+
+// Shoelace formula für Fläche in m²
+function calcArea(pts) {
+  if (pts.length < 3) return 0;
+  let area = 0;
+  for (let i = 0; i < pts.length; i++) {
+    const j = (i + 1) % pts.length;
+    // Konvertierung zu Meter-Koordinaten (vereinfacht)
+    const x1 = pts[i].lng * Math.cos(pts[i].lat * Math.PI/180) * 111320;
+    const y1 = pts[i].lat * 110540;
+    const x2 = pts[j].lng * Math.cos(pts[j].lat * Math.PI/180) * 111320;
+    const y2 = pts[j].lat * 110540;
+    area += x1 * y2 - x2 * y1;
+  }
+  return Math.abs(area / 2);
+}
+
+function formatArea(m2) {
+  if (m2 >= 10000) return (m2 / 10000).toFixed(2) + ' ha';
+  return Math.round(m2) + ' m²';
+}
+
+function startMeasure() {
+  measurePoints = [];
+  // Show instruction
+  showMeasureLabel('Ersten Punkt antippen');
+  if (!leafletMap) return;
+  leafletMap.getContainer().style.cursor = 'crosshair';
+  leafletMap.on('click', onMeasureClick);
+}
+
+function stopMeasure() {
+  if (!leafletMap) return;
+  leafletMap.off('click', onMeasureClick);
+  leafletMap.getContainer().style.cursor = '';
+  if (measurePolyline) { measurePolyline.remove(); measurePolyline = null; }
+  if (measurePolygon)  { measurePolygon.remove();  measurePolygon  = null; }
+  measureMarkers.forEach(m => m.remove()); measureMarkers = [];
+  if (measureLabel) { measureLabel.remove(); measureLabel = null; }
+  measurePoints = [];
+  hideMeasureLabel();
+}
+
+function onMeasureClick(e) {
+  measurePoints.push(e.latlng);
+  const dot = L.circleMarker(e.latlng, {
+    radius: 5, color: '#1a3a5c', fillColor: 'white', fillOpacity: 1, weight: 2
+  }).addTo(leafletMap);
+  measureMarkers.push(dot);
+
+  if (measureType === 'dist') {
+    // Distanzmessung
+    if (measurePoints.length === 1) {
+      showMeasureLabel('Zweiten Punkt antippen');
+    } else {
+      if (measurePolyline) measurePolyline.remove();
+      measurePolyline = L.polyline(measurePoints, { color:'#1a3a5c', weight:2, dashArray:'6,4' }).addTo(leafletMap);
+      let total = 0;
+      for (let i = 1; i < measurePoints.length; i++) {
+        total += haversine(measurePoints[i-1].lat, measurePoints[i-1].lng, measurePoints[i].lat, measurePoints[i].lng);
+      }
+      if (measureLabel) measureLabel.remove();
+      measureLabel = L.marker(measurePoints[measurePoints.length-1], {
+        icon: L.divIcon({
+          html: `<div style="background:#1a3a5c;color:white;padding:6px 14px;border-radius:10px;font-size:13px;font-weight:700;white-space:nowrap;box-shadow:0 2px 10px rgba(0,0,0,0.3);min-width:60px;text-align:center;">${formatDist(total)}</div>`,
+          className: '', iconAnchor: [-8, 16]
+        })
+      }).addTo(leafletMap);
+      showMeasureLabel(formatDist(total) + ' · Weiteren Punkt oder Messen beenden');
+    }
+  } else {
+    // Flächenmessung
+    if (measurePoints.length < 3) {
+      showMeasureLabel(`${measurePoints.length} Punkt(e) · mind. 3 für Fläche`);
+    }
+    if (measurePoints.length >= 2) {
+      if (measurePolyline) measurePolyline.remove();
+      measurePolyline = L.polyline([...measurePoints, measurePoints[0]], { color:'#059669', weight:2, dashArray:'6,4' }).addTo(leafletMap);
+    }
+    if (measurePoints.length >= 3) {
+      if (measurePolygon) measurePolygon.remove();
+      measurePolygon = L.polygon(measurePoints, { color:'#059669', fillColor:'#059669', fillOpacity:0.12, weight:2 }).addTo(leafletMap);
+      const area = calcArea(measurePoints);
+      if (measureLabel) measureLabel.remove();
+      const center = measurePolygon.getBounds().getCenter();
+      measureLabel = L.marker(center, {
+        icon: L.divIcon({
+          html: `<div style="background:#059669;color:white;padding:6px 14px;border-radius:10px;font-size:13px;font-weight:700;white-space:nowrap;box-shadow:0 2px 10px rgba(0,0,0,0.3);min-width:60px;text-align:center;">${formatArea(area)}</div>`,
+          className: '', iconAnchor: [0, 0]
+        })
+      }).addTo(leafletMap);
+      showMeasureLabel(formatArea(area) + ' · Weiteren Punkt oder Messen beenden');
+    }
+  }
+}
+
+function showMeasureLabel(text) {
+  let el = document.getElementById('measure-hint');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'measure-hint';
+    el.style.cssText = 'position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:700;background:rgba(26,58,92,0.92);color:white;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;pointer-events:none;white-space:nowrap;';
+    document.querySelector('.map-container').appendChild(el);
+  }
+  el.textContent = text;
+  el.style.display = 'block';
+}
+
+function hideMeasureLabel() {
+  const el = document.getElementById('measure-hint');
+  if (el) el.style.display = 'none';
+}
+
+// ============================================================
+// TITEL BEARBEITEN
+// ============================================================
+function startEditTitle() {
+  const span  = document.getElementById('app-title-text');
+  const input = document.getElementById('app-title-input');
+  input.value = span.textContent;
+  span.style.display  = 'none';
+  input.style.display = 'inline-block';
+  input.focus(); input.select();
+}
+
+function saveTitle() {
+  const span  = document.getElementById('app-title-text');
+  const input = document.getElementById('app-title-input');
+  const val = input.value.trim();
+  if (val) {
+    span.textContent = val;
+    localStorage.setItem('sondagen_titel', val);
+    document.title = val;
+  }
+  input.style.display = 'none';
+  span.style.display  = '';
+}
+
+function cancelEditTitle() {
+  document.getElementById('app-title-input').style.display = 'none';
+  document.getElementById('app-title-text').style.display  = '';
+}
+
+// Gespeicherten Titel laden
+(function() {
+  const saved = localStorage.getItem('sondagen_titel');
+  if (saved) {
+    const el = document.getElementById('app-title-text');
+    if (el) { el.textContent = saved; document.title = saved; }
+  }
+})();
+
+// ============================================================
 // INIT
 // ============================================================
-updateProgress();
-renderTagFilterChips();
-renderCards();
+try {
+  updateProgress();
+  renderTagFilterChips();
+  renderCards();
+} catch(e) {
+  document.getElementById('cards-grid').innerHTML =
+    '<div style="grid-column:1/-1;padding:20px;background:#fee2e2;border-radius:8px;color:#b91c1c;font-size:12px;">' +
+    '⚠️ Fehler: ' + e.message + '<br><small>' + e.stack + '</small></div>';
+}
 </script>
 <!-- MODAL: Sondage erstellen / bearbeiten -->
 <div class="modal-overlay" id="modal-overlay" onclick="closeModalOnBg(event)">
@@ -2539,6 +3731,58 @@ renderCards();
       <button class="modal-btn cancel" onclick="closeTagModal()">Schliessen</button>
       <button class="modal-btn primary" onclick="addCustomTag()">+ Hinzufügen</button>
     </div>
+  </div>
+</div>
+
+
+<!-- MODAL: Daten sichern -->
+<div class="modal-overlay" id="export-daten-modal" onclick="if(event.target===this)closeExportDatenModal()">
+  <div class="modal" style="width:380px;">
+    <h2>💾 Daten sichern</h2>
+    <p style="font-size:13px;color:#6b7280;margin-bottom:16px;">Wähle was in die Exportdatei eingeschlossen werden soll:</p>
+
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;">
+
+      <label style="display:flex;align-items:flex-start;gap:12px;padding:12px;border:1px solid #e5e7eb;border-radius:8px;cursor:pointer;background:#f9fafb;">
+        <input type="checkbox" id="exp-opt-basis" checked disabled style="margin-top:2px;width:16px;height:16px;accent-color:#1a3a5c;">
+        <div>
+          <div style="font-size:13px;font-weight:600;color:#1a1a2e;">Standortdaten <span style="font-size:11px;color:#9ca3af;font-weight:400;">(immer enthalten)</span></div>
+          <div style="font-size:11px;color:#6b7280;margin-top:2px;">Alle Metadaten, Felddaten, Status, Kommentare, Sicherheit</div>
+        </div>
+      </label>
+
+      <label style="display:flex;align-items:flex-start;gap:12px;padding:12px;border:1px solid #e5e7eb;border-radius:8px;cursor:pointer;" id="exp-label-skizze">
+        <input type="checkbox" id="exp-opt-skizze" style="margin-top:2px;width:16px;height:16px;accent-color:#1a3a5c;" onchange="document.getElementById('exp-label-skizze').style.borderColor=this.checked?'#1a3a5c':'#e5e7eb';document.getElementById('exp-label-skizze').style.background=this.checked?'#eff6ff':'white'">
+        <div>
+          <div style="font-size:13px;font-weight:600;color:#1a1a2e;">✏️ Skizzen</div>
+          <div style="font-size:11px;color:#6b7280;margin-top:2px;">Alle gezeichneten Skizzen auf den Karten</div>
+        </div>
+      </label>
+
+      <label style="display:flex;align-items:flex-start;gap:12px;padding:12px;border:1px solid #e5e7eb;border-radius:8px;cursor:pointer;" id="exp-label-karte">
+        <input type="checkbox" id="exp-opt-karte" style="margin-top:2px;width:16px;height:16px;accent-color:#1a3a5c;" onchange="document.getElementById('exp-label-karte').style.borderColor=this.checked?'#1a3a5c':'#e5e7eb';document.getElementById('exp-label-karte').style.background=this.checked?'#eff6ff':'white'">
+        <div>
+          <div style="font-size:13px;font-weight:600;color:#1a1a2e;">🗺 Kartenausschnitt <span style="font-size:11px;color:#d97706;font-weight:400;">⚠ nur aktuell geöffnete Karte</span></div>
+          <div style="font-size:11px;color:#6b7280;margin-top:2px;">Screenshot der aktuell sichtbaren Kartenansicht als Bild</div>
+        </div>
+      </label>
+    </div>
+
+    <div id="exp-status" style="font-size:12px;color:#6b7280;min-height:18px;margin-bottom:8px;text-align:center;"></div>
+
+    <div class="modal-actions">
+      <button class="modal-btn cancel" onclick="closeExportDatenModal()">Abbrechen</button>
+      <button class="modal-btn primary" onclick="exportAppDaten()">💾 Exportieren</button>
+    </div>
+  </div>
+</div>
+
+<!-- Photo Lightbox -->
+<div id="photo-lightbox" onclick="if(event.target===this)closeLightbox()">
+  <img id="lb-img" src="" alt="Foto">
+  <div style="display:flex;gap:10px;">
+    <button id="photo-lightbox-del" onclick="deleteLightboxFoto()">🗑 Foto löschen</button>
+    <button onclick="closeLightbox()" style="background:rgba(255,255,255,0.15);color:white;border:1px solid rgba(255,255,255,0.3);padding:8px 18px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;">✕ Schliessen</button>
   </div>
 </div>
 
