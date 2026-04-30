@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Benutzerhandbuch – Sondagen App</title>
+<style>
+  :root {
+    --brand: #1a3a5c;
+    --brand-light: #2a5080;
+    --accent: #3b82f6;
+    --green: #059669;
+    --amber: #d97706;
+    --red: #dc2626;
+    --bg: #f0f2f5;
+    --white: #ffffff;
+    --border: #e0e4ea;
+    --text: #1a1a2e;
+    --muted: #6b7280;
+    --rs: #1d4ed8;
+    --rks: #9d174d;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  /* ── Header ── */
+  .page-header {
+    background: var(--brand);
+    color: white;
+    padding: 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+  }
+  .page-header-inner {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .page-header h1 { font-size: 17px; font-weight: 700; }
+  .page-header p  { font-size: 12px; opacity: 0.65; margin-top: 2px; }
+  .header-badge {
+    font-size: 10px; font-weight: 700; padding: 3px 10px;
+    background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 20px; white-space: nowrap;
+  }
+
+  /* ── Layout ── */
+  .layout {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 32px 24px;
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 32px;
+    align-items: start;
+  }
+
+  /* ── Sidebar Nav ── */
+  .sidebar {
+    position: sticky;
+    top: 68px;
+    background: white;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+  .sidebar-title {
+    padding: 10px 14px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    background: #f9fafb;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar nav a {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    text-decoration: none;
+    border-bottom: 1px solid #f3f4f6;
+    transition: all 0.12s;
+  }
+  .sidebar nav a:last-child { border-bottom: none; }
+  .sidebar nav a:hover { background: #eff6ff; color: var(--accent); }
+  .sidebar nav a .nav-icon { font-size: 14px; flex-shrink: 0; width: 18px; text-align: center; }
+  .sidebar nav a .nav-num {
+    margin-left: auto;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--muted);
+    background: #f3f4f6;
+    padding: 1px 6px;
+    border-radius: 10px;
+  }
+
+  /* ── Main Content ── */
+  .content { min-width: 0; }
+
+  /* ── Section ── */
+  .section {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    margin-bottom: 24px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+  .section-header {
+    padding: 16px 20px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .section-icon {
+    width: 36px; height: 36px;
+    background: #eff6ff;
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+  }
+  .section-header h2 { font-size: 15px; font-weight: 700; color: var(--brand); }
+  .section-header p  { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .section-body { padding: 18px 20px; }
+  .section-body > * + * { margin-top: 16px; }
+
+  /* ── Subsection ── */
+  .subsection { margin-top: 20px; }
+  .subsection h3 {
+    font-size: 12px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.05em; color: var(--muted); margin-bottom: 10px;
+    display: flex; align-items: center; gap: 7px;
+  }
+  .subsection h3::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+
+  /* ── Mockup UI Boxes ── */
+  .mockup {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--bg);
+    margin: 14px 0;
+  }
+  .mockup-bar {
+    background: var(--brand);
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .mockup-bar-title { color: white; font-size: 12px; font-weight: 700; }
+  .mockup-bar-sub   { color: rgba(255,255,255,0.6); font-size: 10px; }
+  .mockup-btn {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.25);
+    color: white; padding: 4px 10px; border-radius: 6px;
+    font-size: 10px; font-weight: 700;
+  }
+  .mockup-body { padding: 12px 14px; }
+  .mockup-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 10px; background: white; border-radius: 8px;
+    margin-bottom: 6px; border: 1px solid var(--border);
+    font-size: 12px;
+  }
+  .mockup-row:last-child { margin-bottom: 0; }
+  .mockup-row .label { font-weight: 700; color: var(--brand); flex: 1; }
+  .mockup-row .meta  { color: var(--muted); font-size: 11px; }
+
+  /* ── Badge ── */
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 8px; border-radius: 10px;
+    font-size: 11px; font-weight: 700;
+  }
+  .badge-geplant      { background: #f3f4f6; color: #4b5563; }
+  .badge-abklaerung   { background: #fef3c7; color: #92400e; }
+  .badge-abgeschlossen{ background: #d1fae5; color: #065f46; }
+  .badge-rs  { background: #dbeafe; color: var(--rs); }
+  .badge-rks { background: #fce7f3; color: var(--rks); }
+  .badge-blue { background: #eff6ff; color: var(--accent); }
+
+  /* ── Step list ── */
+  .steps { list-style: none; counter-reset: steps; }
+  .steps li {
+    counter-increment: steps;
+    display: flex; gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid #f3f4f6;
+    font-size: 13px;
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(steps);
+    min-width: 24px; height: 24px;
+    background: var(--brand); color: white;
+    border-radius: 50%; font-size: 11px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: 1px;
+  }
+  .steps li strong { display: block; font-size: 13px; color: var(--brand); margin-bottom: 2px; }
+
+  /* ── Info / Tip / Warning boxes ── */
+  .info-box {
+    padding: 11px 14px; border-radius: 8px;
+    font-size: 12px; line-height: 1.6;
+    display: flex; gap: 10px; align-items: flex-start;
+  }
+  .info-box .ib-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+  .info-tip  { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; }
+  .info-warn { background: #fef3c7; border: 1px solid #fcd34d; color: #78350f; }
+  .info-ok   { background: #d1fae5; border: 1px solid #a7f3d0; color: #065f46; }
+  .info-red  { background: #fee2e2; border: 1px solid #fca5a5; color: #7f1d1d; }
+
+  /* ── Two column grid ── */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  /* ── Feature card ── */
+  .feat-card {
+    border: 1px solid var(--border); border-radius: 9px;
+    padding: 12px 14px; background: #fafbfc;
+  }
+  .feat-card h4 { font-size: 12px; font-weight: 700; color: var(--brand); margin-bottom: 5px; }
+  .feat-card p  { font-size: 12px; color: #4b5563; line-height: 1.5; }
+
+  /* ── Inline code ── */
+  code {
+    background: #f3f4f6; border: 1px solid #e5e7eb;
+    padding: 1px 6px; border-radius: 4px;
+    font-size: 11px; font-family: 'Courier New', monospace;
+    color: var(--brand);
+  }
+
+  /* ── Table ── */
+  .data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .data-table th {
+    background: var(--brand); color: white;
+    padding: 8px 10px; text-align: left; font-size: 11px;
+  }
+  .data-table td { padding: 8px 10px; border-bottom: 1px solid #f3f4f6; }
+  .data-table tr:nth-child(even) td { background: #f9fafb; }
+
+  /* ── Sidebar detail mockup ── */
+  .sidebar-demo {
+    display: flex; gap: 0;
+    border: 1px solid var(--border); border-radius: 10px; overflow: hidden;
+    font-size: 11px; background: white;
+  }
+  .sd-sidebar {
+    width: 140px; min-width: 140px; border-right: 1px solid var(--border);
+  }
+  .sd-section {
+    padding: 8px 10px;
+    border-bottom: 1px solid #f0f2f5;
+  }
+  .sd-section-title {
+    font-size: 9px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.05em; color: var(--muted); margin-bottom: 6px;
+  }
+  .sd-field { margin-bottom: 5px; }
+  .sd-field label { font-size: 9px; color: var(--muted); display: block; }
+  .sd-field span  { font-size: 11px; font-weight: 600; }
+  .sd-map {
+    flex: 1; background: #e8f0e8;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--muted); font-size: 11px; font-weight: 600;
+    min-height: 120px;
+  }
+  .sd-status-row { display: flex; gap: 4px; }
+  .sd-status-btn {
+    flex: 1; padding: 4px 2px; border-radius: 5px; border: 1px solid var(--border);
+    font-size: 9px; font-weight: 700; text-align: center; cursor: default;
+  }
+
+  /* ── Progress bar ── */
+  .prog-bar-demo {
+    height: 10px; background: #e5e7eb; border-radius: 5px; overflow: hidden;
+    display: flex; margin: 6px 0;
+  }
+  .prog-bar-demo .pb-g { background: var(--green); }
+  .prog-bar-demo .pb-a { background: var(--amber); }
+
+  /* ── Responsive ── */
+  @media (max-width: 700px) {
+    .layout { grid-template-columns: 1fr; padding: 16px; gap: 16px; }
+    .sidebar { position: static; }
+    .two-col { grid-template-columns: 1fr; }
+    .sidebar-demo { flex-direction: column; }
+    .sd-sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--border); }
+  }
+
+  /* ── Footer ── */
+  .page-footer {
+    max-width: 960px; margin: 0 auto;
+    padding: 20px 24px 40px;
+    text-align: center;
+    font-size: 11px;
+    color: var(--muted);
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════ HEADER ══════════ -->
+<div class="page-header">
+  <div class="page-header-inner">
+    <div>
+      <h1>📖 Benutzerhandbuch</h1>
+      <p>Sondagen Weinfelden–Sulgen · RS &amp; RKS · Programm T1–T12</p>
+    </div>
+    <span class="header-badge">v1.8</span>
+  </div>
+</div>
+
+<div class="layout">
+
+  <!-- ══════════ SIDEBAR NAV ══════════ -->
+  <div class="sidebar">
+    <div class="sidebar-title">Inhaltsverzeichnis</div>
+    <nav>
+      <a href="#uebersicht"><span class="nav-icon">🏠</span> Übersicht<span class="nav-num">1</span></a>
+      <a href="#standorte"><span class="nav-icon">📍</span> Standorte<span class="nav-num">2</span></a>
+      <a href="#detailansicht"><span class="nav-icon">🗺</span> Detailansicht<span class="nav-num">3</span></a>
+      <a href="#felddaten"><span class="nav-icon">📋</span> Felddaten<span class="nav-num">4</span></a>
+      <a href="#sicherheit"><span class="nav-icon">⚠️</span> Sicherheit<span class="nav-num">5</span></a>
+      <a href="#karte"><span class="nav-icon">🗾</span> Karte &amp; Skizze<span class="nav-num">6</span></a>
+      <a href="#fotos"><span class="nav-icon">📷</span> Fotos<span class="nav-num">7</span></a>
+      <a href="#projekte"><span class="nav-icon">📁</span> Projekte<span class="nav-num">8</span></a>
+      <a href="#export"><span class="nav-icon">💾</span> Export &amp; Backup<span class="nav-num">9</span></a>
+      <a href="#termine"><span class="nav-icon">📆</span> Termine<span class="nav-num">10</span></a>
+      <a href="#kontakte"><span class="nav-icon">👤</span> Kontakte<span class="nav-num">11</span></a>
+      <a href="#daten"><span class="nav-icon">🔒</span> Datenspeicherung<span class="nav-num">12</span></a>
+    </nav>
+  </div>
+
+  <!-- ══════════ MAIN CONTENT ══════════ -->
+  <div class="content">
+
+    <!-- 1. ÜBERSICHT -->
+    <div class="section" id="uebersicht">
+      <div class="section-header">
+        <div class="section-icon">🏠</div>
+        <div>
+          <h2>1 · Übersicht</h2>
+          <p>Startbildschirm und allgemeine Bedienung</p>
+        </div>
+      </div>
+      <div class="section-body">
+
+        <p>Die App zeigt beim Start die <strong>Übersicht</strong> aller Sondierstandorte. Oben befindet sich die Kopfzeile mit Projekttitel und Fortschrittsbalken.</p>
+
+        <!-- Mockup Kopfzeile -->
+        <div class="mockup">
+          <div class="mockup-bar">
+            <div>
+              <div class="mockup-bar-title">Rammsondagen Weinfelden–Sulgen ✎</div>
+              <div class="mockup-bar-sub">31 Standorte · RS &amp; RKS · Programm T1–T12</div>
+            </div>
+            <div style="display:flex;gap:6px;">
+              <div class="mockup-btn">↩ Übersicht</div>
+              <div class="mockup-btn">↺</div>
+            </div>
+          </div>
+          <div class="mockup-body">
+            <div style="display:flex;gap:16px;align-items:center;padding:10px;background:white;border-radius:8px;border:1px solid var(--border);margin-bottom:10px;">
+              <div style="text-align:center;"><div style="font-size:20px;font-weight:700;color:#6b7280;">12</div><div style="font-size:10px;color:#9ca3af;">Geplant</div></div>
+              <div style="text-align:center;"><div style="font-size:20px;font-weight:700;color:var(--amber);">8</div><div style="font-size:10px;color:#9ca3af;">In Abklärung</div></div>
+              <div style="text-align:center;"><div style="font-size:20px;font-weight:700;color:var(--green);">11</div><div style="font-size:10px;color:#9ca3af;">Abgeschlossen</div></div>
+              <div style="flex:1;">
+                <div style="font-size:11px;color:#9ca3af;margin-bottom:4px;">Fortschritt: 11 / 31</div>
+                <div class="prog-bar-demo"><div class="pb-g" style="width:35%;"></div><div class="pb-a" style="width:26%;"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="subsection">
+          <h3>Kopfzeile</h3>
+          <div class="two-col">
+            <div class="feat-card">
+              <h4>✎ Projekttitel bearbeiten</h4>
+              <p>Auf den Titel tippen um ihn umzubenennen. Der Name wird lokal gespeichert.</p>
+            </div>
+            <div class="feat-card">
+              <h4>↺ App neu laden</h4>
+              <p>Lädt die App neu und kehrt zur zuletzt geöffneten Ansicht zurück — ohne Datenverlust.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="subsection">
+          <h3>Fortschrittsanzeige</h3>
+          <p>Der Balken zeigt grün (Abgeschlossen) und orange (In Abklärung). Die Zahlen aktualisieren sich automatisch bei jeder Statusänderung.</p>
+        </div>
+
+        <div class="subsection">
+          <h3>Ansichtsmodi</h3>
+          <div class="two-col">
+            <div class="feat-card"><h4>⊞ Kacheln</h4><p>Übersicht als Kacheln. Zeigt Status, KM, Zugang und Tags auf einen Blick.</p></div>
+            <div class="feat-card"><h4>≡ Liste</h4><p>Tabellarische Ansicht mit Mehrfachauswahl und Bulk-Aktionen.</p></div>
+            <div class="feat-card"><h4>🗺 Karte</h4><p>Alle Standorte auf einer Übersichtskarte. Klick auf Marker öffnet Detailinfo.</p></div>
+            <div class="feat-card"><h4>⤺ Rückgängig</h4><p>Macht die letzte Änderung rückgängig (auch Ctrl+Z auf Desktop).</p></div>
+          </div>
+        </div>
+
+        <div class="subsection">
+          <h3>Statusfilter</h3>
+          <p>Mit den Buttons <strong>Alle / Geplant / In Abklärung / Abgeschlossen</strong> werden nur Standorte des gewählten Status angezeigt. Kombinierbar mit der Suchleiste.</p>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 2. STANDORTE -->
+    <div class="section" id="standorte">
+      <div class="section-header">
+        <div class="section-icon">📍</div>
+        <div>
+          <h2>2 · Standorte verwalten</h2>
+          <p>Erstellen, bearbeiten und löschen</p>
+        </div>
+      </div>
+      <div class="section-body">
+
+        <div class="subsection">
+          <h3>Neuen Standort erfassen</h3>
+          <ol class="steps">
+            <li><strong>+ Kachel antippen</strong>In der Kachelansicht die gestrichelte Kachel „+" antippen.</li>
+            <li><strong>Marker auf Karte setzen</strong>RS-Marker (blau) und RKS-Marker (grün) durch Antippen der Karte positionieren. Mit <span class="badge badge-rs">● RS setzen</span> / <span class="badge badge-rks">● RKS setzen</span> den Modus wechseln.</li>
+            <li><strong>Felder ausfüllen</strong>Bezeichnung, Tagarbeit (T1–T12), Mast-Nr., Kilometer, Tiefe Soll, Gleis (L/R) und Zugang eingeben.</li>
+            <li><strong>Speichern</strong>Auf „Speichern" tippen. Der Standort erscheint sofort in der Übersicht.</li>
+          </ol>
+        </div>
+
+        <div class="info-box info-tip">
+          <span class="ib-icon">💡</span>
+          <span>Der Abstand zur nächsten Sondage wird automatisch berechnet und in der Karte als Badge angezeigt.</span>
+        </div>
+
+        <div class="subsection">
+          <h3>Standort bearbeiten</h3>
+          <p>In der Kachelansicht erscheinen beim Hover/langen Drücken drei Buttons oben rechts auf der Kachel:</p>
+          <div class="two-col">
+            <div class="feat-card"><h4>✏️ Bearbeiten</h4><p>Öffnet die Erfassungsmaske mit den bestehenden Daten zum Editieren.</p></div>
+            <div class="feat-card"><h4>🏷 Tag zuweisen</h4><p>Öffnet einen Picker zum schnellen Zuweisen eines Tags direkt auf der Kachel.</p></div>
+            <div class="feat-card"><h4>🗑 Löschen</h4><p>Löscht den Standort inkl. aller gespeicherten Daten nach Bestätigung.</p></div>
+          </div>
+        </div>
+
+        <div class="subsection">
+          <h3>Mehrere Standorte gleichzeitig bearbeiten (Listenansicht)</h3>
+          <p>In der Listenansicht (≡) können mehrere Standorte per Checkbox ausgewählt werden. Die blaue Aktionsleiste erscheint automatisch:</p>
+          <div class="mockup">
+            <div style="background:var(--brand);padding:8px 12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <span style="color:white;font-size:11px;font-weight:700;">3 ausgewählt</span>
+              <span style="color:rgba(255,255,255,0.4);">|</span>
+              <span style="color:rgba(255,255,255,0.75);font-size:11px;">Status setzen:</span>
+              <span class="badge badge-geplant">Geplant</span>
+              <span class="badge badge-abklaerung">In Abklärung</span>
+              <span class="badge badge-abgeschlossen">Abgeschlossen</span>
+              <span style="color:rgba(255,255,255,0.4);">|</span>
+              <span style="color:rgba(255,255,255,0.75);font-size:11px;">Tagarbeit:</span>
+              <span class="badge badge-blue">T3 ▾</span>
+              <span class="badge" style="background:#e0f2fe;color:#0369a1;">Setzen</span>
+              <span style="color:rgba(255,255,255,0.4);">|</span>
+              <span class="badge" style="background:#fee2e2;color:#b91c1c;">✕ Löschen</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 3. DETAILANSICHT -->
+    <div class="section" id="detailansicht">
+      <div class="section-header">
+        <div class="section-icon">🗺</div>
+        <div>
+          <h2>3 · Detailansicht</h2>
+          <p>Einzelner Standort mit Karte und Sidebar</p>
+        </div>
+      </div>
+      <div class="section-body">
+
+        <p>Ein Tippen auf eine Kachel öffnet die Detailansicht. Diese besteht aus einer <strong>Sidebar links</strong> (Eingaben) und der <strong>Karte rechts</strong>.</p>
+
+        <div class="sidebar-demo">
+          <div class="sd-sidebar">
+            <div class="sd-section">
+              <div class="sd-section-title">Metadaten</div>
+              <div class="sd-field"><label>Bezeichnung</label><span>SP-14</span></div>
+              <div class="sd-field"><label>KM</label><span>62.890</span></div>
+              <div class="sd-field"><label>Tagarbeit</label><span>T6</span></div>
+            </div>
+            <div class="sd-section">
+              <div class="sd-section-title">Status</div>
+              <div class="sd-status-row">
+                <div class="sd-status-btn" style="background:#f3f4f6;color:#6b7280;">Geplant</div>
+                <div class="sd-status-btn" style="background:#fef3c7;color:#92400e;border-color:#fcd34d;">Abkl.</div>
+                <div class="sd-status-btn" style="background:#e5e7eb;color:#9ca3af;">Fertig</div>
+              </div>
+            </div>
+            <div class="sd-section">
+              <div class="sd-section-title">Zugangsart</div>
+              <div style="display:flex;gap:4px;flex-wrap:wrap;">
+                <span class="badge badge-blue" style="font-size:9px;">Fremdparzelle</span>
+              </div>
+            </div>
+          </div>
+          <div class="sd-map">🗺 Karte (RS + RKS Marker)</div>
+        </div>
+
+        <div class="subsection">
+          <h3>Navigation zwischen Standorten</h3>
+          <p>Mit <strong>◀ Zurück</strong> und <strong>Weiter ▶</strong> oben in der Sidebar kann direkt zum vorherigen oder nächsten Standort gewechselt werden, ohne in die Übersicht zurückzugehen.</p>
+        </div>
+
+        <div class="subsection">
+          <h3>Sidebar-Sektionen</h3>
+          <table class="data-table">
+            <thead><tr><th>Sektion</th><th>Inhalt</th></tr></thead>
+            <tbody>
+              <tr><td><strong>Metadaten</strong></td><td>KM, Mast, Tiefe Soll, Gleis, Tagarbeit — bearbeitbar via ✏️</td></tr>
+              <tr><td><strong>Zugang &amp; Abklärung</strong></td><td>Status, Parzelle, Zugangsart, Kontakt, Nutzungsanfrage</td></tr>
+              <tr><td><strong>Rammsondierungen</strong></td><td>RS / RKS aktivieren oder deaktivieren</td></tr>
+              <tr><td><strong>Fotos</strong></td><td>Fotos aufnehmen oder aus Galerie laden</td></tr>
+              <tr><td><strong>Felddaten</strong></td><td>Tiefe Ist, Abbruchgrund, Grundwasser, Schichtfolge</td></tr>
+              <tr><td><strong>Sicherheit</strong></td><td>SiWä, Gleissperrung, Fahrstrom, PSA</td></tr>
+              <tr><td><strong>Änderungsprotokoll</strong></td><td>Automatisch erfasste Änderungshistorie</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="info-box info-tip">
+          <span class="ib-icon">💡</span>
+          <span>Alle Sektionen können durch Antippen des Titels ein- und ausgeklappt werden. Der Zustand wird gespeichert.</span>
+        </div>
+
+        <div class="subsection">
+          <h3>Autosave</h3>
+          <p>Alle Eingaben werden <strong>automatisch gespeichert</strong> — ohne Speichern-Button. Das grüne <code>✓ Gespeichert</code>-Badge oben rechts in der Sidebar bestätigt die Speicherung.</p>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 4. FELDDATEN -->
+    <div class="section" id="felddaten">
+      <div class="section-header">
+        <div class="section-icon">📋</div>
+        <div>
+          <h2>4 · Felddaten</h2>
+          <p>Messwerte und Bohrresultate erfassen</p>
+        </div>
+      </div>
+      <div class="section-body">
+
+        <p>Die Felddaten-Sektion ist in zwei Tabs aufgeteilt: <span class="badge badge-rs">RS</span> und <span class="badge badge-rks">RKS</span>. Beide können unabhängig voneinander befüllt werden.</p>
+
+        <div class="subsection">
+          <h3>RS — Rammsondierung</h3>
+          <table class="data-table">
+            <thead><tr><th>Feld</th><th>Beschreibung</th></tr></thead>
+            <tbody>
+              <tr><td><strong>Tiefe Ist (m)</strong></td><td>Tatsächlich erreichte Tiefe in Metern</td></tr>
+              <tr><td><strong>Abbruchgrund</strong></td><td>Endtiefe erreicht / Hindernis / Fels / Geräteabbruch / Zugang</td></tr>
+              <tr><td><strong>Grundwasser</strong></td><td>Ja/Nein + Tiefe bei der Anbohrung</td></tr>
+              <tr><td><strong>Bemerkung</strong></td><td>Freitext für weitere Angaben</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="subsection">
+          <h3>RKS — Rammkernsondierung</h3>
+          <table class="data-table">
+            <thead><tr><th>Feld</th><th>Beschreibung</th></tr></thead>
+            <tbody>
+              <tr><td><strong>Tiefe Ist (m)</strong></td><td>Tatsächlich erreichte Tiefe in Metern</td></tr>
+              <tr><td><strong>Abbruchgrund</strong></td><td>Endtiefe erreicht / Hindernis / Fels / Geräteabbruch / Zugang</td></tr>
+              <tr><td><strong>Kerngewinn</strong></td><td>Gut (&gt;75%) / Mässig (50–75%) / Schlecht (&lt;50%)</td></tr>
+              <tr><td><strong>Grundwasser</strong></td><td>Ja/Nein + Tiefe bei der Anbohrung</td></tr>
+              <tr><td><strong>Schichtfolge</strong></td><td>Freitext für die geologische Schichtbeschreibung</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="info-box info-tip">
+          <span class="ib-icon">💡</span>
+          <span>RS oder RKS können über die Buttons <span class="badge badge-rs">RS ✓</span> <span class="badge badge-rks">RKS ✓</span> in der Sektion «Rammsondierungen» einzeln deaktiviert werden, falls nur eine Sondierungsart ausgeführt wird.</span>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 5. SICHERHEIT -->
+    <div class="section" id="sicherheit">
+      <div class="section-header">
+        <div class="section-icon">⚠️</div>
+        <div>
+          <h2>5 · Sicherheit</h2>
+          <p>Gleissicherung und PSA erfassen</p>
+        </div>
+      </div>
+      <div class="section-body">
+
+        <table class="data-table">
+          <thead><tr><th>Feld</th><th>Optionen</th><th>Bedeutung</th></tr></thead>
+          <tbody>
+            <tr><td><strong>SiWä erforderlich</strong></td><td>Ja / Nein / k.A.</td><td>Sicherheitswächter notwendig</td></tr>
+            <tr><td><strong>Gleissperrung</strong></td><td>Ja / Nein / k.A.</td><td>Ob eine Gleissperrung beantragt werden muss</td></tr>
+            <tr><td><strong>Sperrfenster</strong></td><td>Freitext</td><td>Zeitfenster der Gleissperrung (erscheint nur bei Ja)</td></tr>
+            <tr><td><strong>Fahrstrom abschalten</strong></td><td>Ja / Nein / k.A.</td><td>Ob Fahrstrom abgeschaltet werden muss</td></tr>
+            <tr><td><strong>Mindestabstand Gleis</strong></td><td>k.A. / 3.0 m / 5.0 m</td><td>Einzuhaltender Sicherheitsabstand</td></tr>
+            <tr><td><strong>PSA</strong></td><td>Checkboxen</td><td>Warnweste, Helm, Schuhe, Gehörschutz, Brille, Handschuhe</td></tr>
+            <tr><td><strong>Hinweise</strong></td><td>Freitext</td><td>Weitere sicherheitsrelevante Bemerkungen</td></tr>
+          </tbody>
+        </table>
+
+        <div class="info-box info-warn">
+          <span class="ib-icon">⚠️</span>
+          <span>Sicherheitsangaben fliessen in den PDF-Bericht ein und sollten vor Beginn der Feldarbeiten vollständig ausgefüllt werden.</span>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 6. KARTE & SKIZZE -->
+    <div class="section" id="karte">
+      <div class="section-header">
+        <div class="section-icon">🗾</div>
+        <div>
+          <h2>6 · Karte &amp; Skizze</h2>
+          <p>Kartenansicht, Zeichenwerkzeuge und Messung</p>
+        </div>
+      </div>
+      <div class="section-body">
+
+        <div class="subsection">
+          <h3>Kartenarten</h3>
+          <div class="two-col">
+            <div class="feat-card"><h4>swisstopo</h4><p>Amtliche Landeskarte der Schweiz. Ideal für Geländeübersicht.</p></div>
+            <div class="feat-card"><h4>Luftbild</h4><p>swisstopo-Luftbild. Gut für Zugangserkundung.</p></div>
+            <div class="feat-card"><h4>Google Maps</h4><p>Google-Strassenkarte mit Beschriftungen.</p></div>
+            <div class="feat-card"><h4>Satellit</h4><p>Google-Satellitenbild mit hoher Auflösung.</p></div>
+          </div>
+          <p style="margin-top:10px;">Die Transparenz (25% – 100%) kann angepasst werden um Kartenebenen zu überblenden.</p>
+        </div>
+
+        <div class="subsection">
+          <h3>Marker verschieben</h3>
+          <p>RS- und RKS-Marker können durch langes Drücken entsperrt und dann verschoben werden. Nach dem Verschieben mit <strong>✓ Bestätigen</strong> die neue Position speichern oder mit <strong>✕ Abbrechen</strong> verwerfen.</p>
+          <div class="info-box info-warn">
+            <span class="ib-icon">⚠️</span>
+            <span>Verschobene Marker aktualisieren automatisch die LV95-Koordinaten und den Kilometer-Wert.</span>
+          </div>
+        </div>
+
+        <div class="subsection">
+          <h3>Parzellen-Info (Swisstopo)</h3>
+          <p>Im Modus <strong>Karte</strong> auf die Karte tippen um Parzelleninformationen aus dem amtlichen Vermessungskataster abzufragen. Es öffnet ein Popup mit Parzellen-Nr., Gemeinde und Links zu geo.admin.ch, Google Maps und Street View.</p>
+        </div>
+
+        <div class="subsection">
+          <h3>Skizze / Kommentieren</h3>
+          <ol class="steps">
+            <li><strong>Modus wechseln</strong>Auf <strong>✏️ Kommentieren</strong> in der Werkzeugleiste tippen.</li>
+            <li><strong>Werkzeug wählen</strong>Stift (Freihand), Linie (Polylinie) oder T (Text). Farbe und Stärke sind einstellbar.</li>
+            <li><strong>Zeichnen</strong>Mit dem Finger oder Stift direkt auf der Karte zeichnen. Die Skizze ist geografisch verankert und bleibt beim Zoomen korrekt positioniert.</li>
+            <li><strong>Radierer</strong>Einzelne Elemente antippen um sie zu löschen.</li>
+          </ol>
+          <div class="info-box info-ok">
+            <span class="ib-icon">✅</span>
+            <span>Skizzen werden pro Standort gespeichert und können in den PDF-Bericht und den Antwortmail-Baustein eingebettet werden.</span>
+          </div>
+        </div>
+
+        <div class="subsection">
+          <h3>Messung</h3>
+          <p>Im Modus <strong>↔ Messen</strong> können Distanzen und Flächen auf der Karte gemessen werden. Durch Antippen werden Messpunkte gesetzt, ein Doppelklick/Doppeltipp beendet die Messung.</p>
+        </div>
+
+        <div class="subsection">
+          <h3>GPS</h3>
+          <p>Mit dem <strong>GPS-Button</strong> in der Werkzeugleiste wird die aktuelle Position auf der Karte angezeigt. Mit <strong>Standort</strong> wird die Karte auf die GPS-Position zentriert.</p>
+        </div>
+
+        <div class="subsection">
+          <h3>Vollbildmodus</h3>
+          <p>Das Symbol oben rechts auf der Karte öffnet die Karte im Vollbild. Mit <strong>ESC</strong> oder erneutem Antippen des Symbols wird der Vollbildmodus beendet.</p>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 7. FOTOS -->
+    <div class="section" id="fotos">
+      <div class="section-header">
+        <div class="section-icon">📷</div>
+        <div>
+          <h2>7 · Fotos</h2>
+          <p>Bilder aufnehmen und verwalten</p>
+        </div>
+      </div>
+      <div class="section-body">
+
+        <div class="two-col">
+          <div class="feat-card">
+            <h4>📁 Aus Galerie</h4>
+            <p>Tippe auf das Galerie-Symbol in der Fotos-Sektion um ein bestehendes Bild vom Gerät hochzuladen.</p>
+          </div>
+          <div class="feat-card">
+            <h4>📸 Kamera</h4>
+            <p>Tippe auf das Kamera-Symbol um direkt ein Foto aufzunehmen. Vorder-/Rückkamera kann gewechselt werden.</p>
+          </div>
+        </div>
+
+        <p style="margin-top:12px;">Fotos werden als Vorschau-Thumbnails angezeigt. Antippen öffnet das Foto im Vollbild. Aus dem Vollbild heraus kann das Foto auch gelöscht werden.</p>
+
+        <div class="info-box info-warn">
+          <span class="ib-icon">⚠️</span>
+          <span>Fotos werden im localStorage des Browsers gespeichert. Bei vielen hochauflösenden Fotos kann der Speicher voll werden. Es empfiehlt sich, regelmässig ein <strong>Daten-Backup</strong> zu erstellen (siehe Kapitel 9).</span>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 8. PROJEKTE -->
+    <div class="section" id="projekte">
+      <div class="section-header">
+        <div class="section-icon">📁</div>
+        <div>
+          <h2>8 · Projekte</h2>
+          <p>Mehrere Sondierungsprojekte verwalten</p>
+        </div>
+      </div>
+      <div class="section-body">
+
+        <p>Über den Button <strong>📁 Projekte ▼</strong> in der Toolbar können mehrere unabhängige Projekte angelegt und gewechselt werden. Jedes Projekt hat eigene Standorte, Daten und Tags.</p>
+
+        <ol class="steps">
+          <li><strong>Neues Projekt erstellen</strong>Im Projektmenü auf <strong>+ Neues Projekt erstellen</strong> tippen und einen Namen vergeben.</li>
+          <li><strong>Projekt wechseln</strong>Im Projektmenü das gewünschte Projekt antippen — die App lädt die entsprechenden Standorte.</li>
+          <li><strong>Projekt löschen</strong>Das ✕ neben dem Projektnamen löscht das Projekt samt allen Daten. Das letzte Projekt kann nicht gelöscht werden.</li>
+        </ol>
+
+        <div class="info-box info-red">
+          <span class="ib-icon">🗑</span>
+          <span><strong>Achtung:</strong> Das Löschen eines Projekts ist unwiderruflich. Vorher ein Backup erstellen!</span>
+        </div>
+
+        <div class="subsection">
+          <h3>Tags verwalten</h3>
+          <p>Über <strong>🏷 Tags</strong> in der Toolbar können eigene farbige Tags erstellt werden. Diese können einzelnen Standorten zugewiesen und als Filter genutzt werden.</p>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 9. EXPORT & BACKUP -->
+    <div class="section" id="export">
+      <div class="section-header">
+        <div class="section-icon">💾</div>
+        <div>
+          <h2>9 · Export &amp; Backup</h2>
+          <p>Daten sichern und exportieren</p>
+        </div>
+      </div>
+      <div class="section-body">
+
+        <div class="subsection">
+          <h3>Daten sichern (Backup)</h3>
+          <ol class="steps">
+            <li><strong>📁 Projekte öffnen</strong>Auf den Projekte-Button in der Toolbar tippen.</li>
+            <li><strong>💾 Daten sichern</strong>Auswählen was exportiert werden soll: Standortdaten, Skizzen, Kartenausschnitt.</li>
+            <li><strong>Exportieren</strong>Eine <code>.json</code>-Datei wird heruntergeladen. Diese Datei enthält alle Daten und kann jederzeit wieder importiert werden.</li>
+          </ol>
+          <div class="info-box info-ok">
+            <span class="ib-icon">✅</span>
+            <span>Es wird empfohlen, nach jedem Arbeitstag ein Backup zu erstellen und die Datei sicher abzulegen (z.B. in der Cloud).</span>
+          </div>
+        </div>
+
+        <div class="subsection">
+          <h3>Daten laden (Import)</h3>
+          <p>Über <strong>📂 Daten laden</strong> im Projektmenü kann eine gesicherte <code>.json</code>-Datei wieder importiert werden. Die bestehenden Daten werden dabei überschrieben.</p>
+        </div>
+
+        <div class="subsection">
+          <h3>Excel-Export</h3>
+          <p>Über <strong>📊 Excel (.xlsx)</strong> wird eine Tabelle aller Standorte mit Status, KM, Felddaten und Sicherheitsangaben exportiert.</p>
+        </div>
+
+        <div class="subsection">
+          <h3>PDF-Export</h3>
+          <p>Über <strong>📄 PDF (.pdf)</strong> wird ein übersichtlicher Bericht aller Standorte als PDF generiert.</p>
+          <p style="margin-top:8px;">Für jeden einzelnen Standort gibt es zusätzlich den <strong>PDF-Bericht</strong>-Button ganz unten in der Detailansicht — dieser erstellt einen detaillierten Einzelbericht mit Karte, Felddaten und Sicherheitsangaben.</p>
+        </div>
+
+        <div class="subsection">
+          <h3>Excel-Import</h3>
+          <p>Über <strong>⬆ Excel importieren</strong> können Standorte aus einer Excel-Tabelle importiert werden. Die Tabelle muss Spalten für Bezeichnung, KM, Mast, Tiefe, Gleis und Tagarbeit enthalten.</p>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 10. TERMINE -->
+    <div class="section" id="termine">
+      <div class="section-header">
+        <div class="section-icon">📆</div>
+        <div>
+          <h2>10 · Termine</h2>
+          <p>Starttermine pro Tagarbeit planen</p>
+        </div>
+      </div>
+      <div class="section-body">
+
+        <p>Über <strong>📆 Termine</strong> in der Toolbar können Starttermine für jede Tagarbeit (T1–T12) erfasst werden. T2–T12 können automatisch ausgehend von T1 berechnet werden.</p>
+
+        <div class="subsection">
+          <h3>Kalender-Export</h3>
+          <p>Mit <strong>📆 .ics exportieren</strong> werden alle Termine als Kalender-Datei exportiert. Diese kann in Google Calendar, Apple Kalender oder Outlook importiert werden.</p>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 11. KONTAKTE & ANTWORTMAIL -->
+    <div class="section" id="kontakte">
+      <div class="section-header">
+        <div class="section-icon">👤</div>
+        <div>
+          <h2>11 · Kontakte &amp; Antwortmail</h2>
+          <p>Projektbeteiligte und Nutzungsanfragen</p>
+        </div>
+      </div>
+      <div class="section-body">
+
+        <div class="subsection">
+          <h3>Projektbeteiligte</h3>
+          <p>Unterhalb der Übersicht können drei Kontaktrollen erfasst werden:</p>
+          <div class="two-col">
+            <div class="feat-card"><h4 style="color:var(--rs);">Projektleitung (PL)</h4><p>Name, Firma, Telefon, Mobile, E-Mail, Adresse</p></div>
+            <div class="feat-card"><h4 style="color:var(--green);">Geotechniker (GEO)</h4><p>Name, Firma, Telefon, Mobile, E-Mail, Adresse</p></div>
+            <div class="feat-card"><h4 style="color:var(--amber);">Subunternehmer (SUB)</h4><p>Name, Firma, Telefon, Mobile, E-Mail, Adresse</p></div>
+          </div>
+        </div>
+
+        <div class="subsection">
+          <h3>Nutzungsanfrage senden</h3>
+          <p>In der Detailansicht unter «Zugang &amp; Abklärung» kann mit <strong>Nutzungsanfrage senden</strong> eine vorbereitete E-Mail an den Grundeigentümer geöffnet werden.</p>
+        </div>
+
+        <div class="subsection">
+          <h3>Antwortmail / Mailvorlage</h3>
+          <p>Über <strong>✉ Antwortmail erstellen</strong> kann eine wiederverwendbare Mailvorlage mit Platzhaltern erstellt werden. Verfügbare Platzhalter:</p>
+          <div style="background:#f9fafb;border:1px solid var(--border);border-radius:8px;padding:12px;font-size:11px;line-height:2;">
+            <code>{{projekt}}</code> · <code>{{datum}}</code> · <code>{{standort_name}}</code> · <code>{{standort_km}}</code> · <code>{{standort_link}}</code><br>
+            <code>{{pl_name}}</code> · <code>{{pl_tel}}</code> · <code>{{pl_email}}</code> · <code>{{pl_firma}}</code><br>
+            <code>{{geo_name}}</code> · <code>{{geo_tel}}</code> · <code>{{sub_name}}</code> · <code>{{sub_tel}}</code>
+          </div>
+          <p style="margin-top:10px;">Optional können Karte, Karte + Skizze oder ein PDF-Bericht als Bausteine angehängt werden.</p>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 12. DATENSPEICHERUNG -->
+    <div class="section" id="daten">
+      <div class="section-header">
+        <div class="section-icon">🔒</div>
+        <div>
+          <h2>12 · Datenspeicherung</h2>
+          <p>Wo und wie Daten gespeichert werden</p>
+        </div>
+      </div>
+      <div class="section-body">
+
+        <div class="info-box info-ok">
+          <span class="ib-icon">✅</span>
+          <span><strong>Alle Daten bleiben auf Ihrem Gerät.</strong> Es werden keine Daten an einen Server übertragen. Die App funktioniert vollständig offline.</span>
+        </div>
+
+        <div class="subsection">
+          <h3>localStorage</h3>
+          <p>Alle Eingaben (Status, Felddaten, Kommentare, Fotos, Skizzen, Kontakte) werden im <strong>localStorage</strong> des Browsers gespeichert. Diese Daten bleiben dauerhaft erhalten — auch nach dem Schliessen des Browsers oder dem Ausschalten des Geräts.</p>
+        </div>
+
+        <div class="subsection">
+          <h3>Wann gehen Daten verloren?</h3>
+          <table class="data-table">
+            <thead><tr><th>Situation</th><th>Datenverlust?</th></tr></thead>
+            <tbody>
+              <tr><td>Browser schliessen / Gerät neu starten</td><td style="color:var(--green);font-weight:700;">❌ Nein</td></tr>
+              <tr><td>App neu laden (↺ Button)</td><td style="color:var(--green);font-weight:700;">❌ Nein</td></tr>
+              <tr><td>Anderes Gerät / anderer Browser</td><td style="color:var(--red);font-weight:700;">⚠️ Daten nicht vorhanden</td></tr>
+              <tr><td>Browser-Daten löschen (Einstellungen)</td><td style="color:var(--red);font-weight:700;">✅ Ja — Backup erstellen!</td></tr>
+              <tr><td>App deinstallieren (PWA)</td><td style="color:var(--red);font-weight:700;">✅ Ja — Backup erstellen!</td></tr>
+              <tr><td>Standort löschen</td><td style="color:var(--red);font-weight:700;">✅ Ja, für diesen Standort</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="info-box info-warn">
+          <span class="ib-icon">⚠️</span>
+          <span>Regelmässige Backups via <strong>💾 Daten sichern</strong> sind dringend empfohlen. Die exportierte <code>.json</code>-Datei enthält alle Daten und kann auf einem anderen Gerät oder nach einem Datenverlust wiederhergestellt werden.</span>
+        </div>
+
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /layout -->
+
+<div class="page-footer">
+  © 2026 Gentiana Leci · Sondagen App v1.8 · Alle Rechte vorbehalten
+</div>
+
+</body>
+</html>
