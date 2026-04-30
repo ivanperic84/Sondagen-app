@@ -96,6 +96,7 @@
 
   /* Detail */
   #detail-view { display: none; }
+  #overview-view { display: none; }
   .detail-layout { display: flex; height: calc(100vh - 110px); }
 
   /* Standort erfassen / bearbeiten — Vollbild */
@@ -1791,6 +1792,7 @@ function appRefresh() {
     if (inDetail) sessionStorage.setItem('refresh_pair', currentPairId);
   } catch(e) {}
   if (watchId) { navigator.geolocation.clearWatch(watchId); watchId = null; }
+  destroySketchListeners();
   if (leafletMap) { try { leafletMap.remove(); } catch(e) {} leafletMap = null; }
   if (createMapLeaflet) { try { createMapLeaflet.remove(); } catch(e) {} createMapLeaflet = null; }
   location.reload();
@@ -1804,7 +1806,8 @@ function showOverview() {
   document.getElementById('create-view').style.display = 'none';
   document.getElementById('back-btn').style.display = 'none';
   if (watchId) { navigator.geolocation.clearWatch(watchId); watchId = null; }
-  if (leafletMap) { leafletMap.remove(); leafletMap = null; layerControl = null; detailBaseLayer = null; gpsMarker = null; gpsCircle = null; sketchInitialized = false; }
+  if (leafletMap) { leafletMap.remove(); leafletMap = null; layerControl = null; detailBaseLayer = null; gpsMarker = null; gpsCircle = null; }
+  destroySketchListeners();
   // Vollbild-Erfassungskarte bereinigen
   if (createMapLeaflet) { createMapLeaflet.remove(); createMapLeaflet = null; createRsMarker = null; createRksMarker = null; }
   updateProgress();
@@ -2858,6 +2861,14 @@ function zoomToGPS() {
 // ============================================================
 let sketchInitialized = false;
 let canvasDpr = 1; // Geräte-Pixelverhältnis für HiDPI-Schärfe
+let _sketchResizeHandler = null;
+let _sketchKeydownHandler = null;
+
+function destroySketchListeners() {
+  if (_sketchResizeHandler)  { window.removeEventListener('resize',  _sketchResizeHandler);  _sketchResizeHandler  = null; }
+  if (_sketchKeydownHandler) { window.removeEventListener('keydown', _sketchKeydownHandler); _sketchKeydownHandler = null; }
+  sketchInitialized = false;
+}
 
 function initSketchCanvas() {
   const canvas = document.getElementById('sketch-canvas');
@@ -2878,6 +2889,7 @@ function initSketchCanvas() {
   resize();
   if (!sketchInitialized) {
     sketchInitialized = true;
+    _sketchResizeHandler = resize;
     window.addEventListener('resize', resize);
     // Freehand: Pointer Events (Maus + Touch + Stift, unified)
     canvas.addEventListener('pointerdown',   onPtrDown,  { passive: false });
@@ -2901,7 +2913,7 @@ function initSketchCanvas() {
       }));
     }, { passive: false });
     // ESC zum Abbrechen
-    window.addEventListener('keydown', e => {
+    _sketchKeydownHandler = e => {
       if (e.key === 'Escape' && isDrawMode) {
         if (polyActive) cancelPolyline();
         if (currentTool === 'text') {
@@ -2909,7 +2921,8 @@ function initSketchCanvas() {
           textInputPending = false;
         }
       }
-    });
+    };
+    window.addEventListener('keydown', _sketchKeydownHandler);
   }
   // Skizze bei Zoom und Pan neu zeichnen
   if (leafletMap) {
@@ -3691,7 +3704,12 @@ function bulkDelete() {
   if (!selectedIds.size) return;
   if (!confirm(`${selectedIds.size} Standort(e) wirklich löschen?`)) return;
   pushUndo();
-  selectedIds.forEach(id => { const idx = PAIRS.findIndex(x => x.id === id); if (idx >= 0) PAIRS.splice(idx, 1); });
+  selectedIds.forEach(id => {
+    const idx = PAIRS.findIndex(x => x.id === id);
+    if (idx >= 0) PAIRS.splice(idx, 1);
+    delete appData[id];
+  });
+  saveData(appData);
   savePairs();
   selectedIds.clear();
   updateProgress();
@@ -4068,6 +4086,8 @@ function deletePair(id) {
   if (!confirm(`«${name}» wirklich löschen?`)) return;
   pushUndo();
   PAIRS.splice(PAIRS.findIndex(x => x.id === id), 1);
+  delete appData[id];
+  saveData(appData);
   savePairs();
   updateProgress();
   renderCards();
@@ -6242,7 +6262,11 @@ try {
     const refreshPair = parseInt(sessionStorage.getItem('refresh_pair'));
     if (refreshPair && PAIRS.find(p => p.id === refreshPair)) {
       showDetail(refreshPair);
+    } else {
+      document.getElementById('overview-view').style.display = 'block';
     }
+  } else {
+    document.getElementById('overview-view').style.display = 'block';
   }
   sessionStorage.removeItem('refresh_view');
   sessionStorage.removeItem('refresh_pair');
